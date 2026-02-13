@@ -1,0 +1,128 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin | Aswin Paudel Portfolio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Merienda:wght@400;600;700&family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body class="admin-body">
+  <main class="container admin-wrap">
+    <section class="card admin-head reveal in-view">
+      <div>
+        <p class="eyebrow">Admin Panel</p>
+        <h1>Portfolio Content Manager</h1>
+      </div>
+      <a class="btn ghost" href="/">View Site</a>
+    </section>
+
+    <section id="loginSection" class="card section reveal in-view">
+      <h2>Secure Login</h2>
+      <div class="grid two">
+        <label class="field">
+          <span>Admin Username</span>
+          <input id="adminUsername" type="text" placeholder="Enter admin username">
+        </label>
+        <label class="field">
+          <span>Admin Password</span>
+          <input id="adminPassword" type="password" placeholder="Enter admin password">
+        </label>
+      </div>
+      <div class="action-row">
+        <button id="loginBtn" class="btn primary" type="button">Login</button>
+        <p id="loginStatus" class="status"></p>
+      </div>
+    </section>
+
+    <div id="editorSection" class="hidden">
+      <section class="card section reveal in-view">
+        <div class="section-head">
+          <h2>Editor</h2>
+          <button id="logoutBtn" class="btn ghost" type="button">Logout</button>
+        </div>
+      </section>
+
+      <section class="card section reveal in-view">
+        <h2>Profile</h2>
+        <div class="grid two">
+          <label class="field full"><span>Profile Image URL (GitHub raw link)</span><input id="profileImageUrl" type="text" placeholder="https://raw.githubusercontent.com/.../profile.jpg"></label>
+          <label class="field full"><span>Profile Audio URL (GitHub raw link)</span><input id="profileAudioUrl" type="text" placeholder="https://raw.githubusercontent.com/.../intro.mp3"></label>
+          <label class="field full"><span>Profile Video URL (GitHub raw link)</span><input id="profileVideoUrl" type="text" placeholder="https://raw.githubusercontent.com/.../intro.mp4"></label>
+          <label class="field"><span>Name</span><input id="name" type="text"></label>
+          <label class="field"><span>Role</span><input id="role" type="text"></label>
+          <label class="field"><span>Location</span><input id="location" type="text"></label>
+          <label class="field"><span>Email</span><input id="email" type="email"></label>
+          <label class="field"><span>Phone</span><input id="phone" type="text"></label>
+          <label class="field"><span>CTA Label</span><input id="ctaLabel" type="text"></label>
+          <label class="field full"><span>CTA Link</span><input id="ctaLink" type="text"></label>
+          <label class="field full"><span>Bio</span><textarea id="bio" rows="4"></textarea></label>
+        </div>
+      </section>
+
+      <section class="card section reveal in-view">
+        <div class="section-head">
+          <h2>Technical Skills</h2>
+          <button id="addTechnicalSkill" class="btn ghost" type="button">+ Add Technical Skill</button>
+        </div>
+        <div id="technicalSkillsContainer" class="stack"></div>
+      </section>
+
+      <section class="card section reveal in-view">
+        <div class="section-head">
+          <h2>Soft Skills</h2>
+          <button id="addSoftSkill" class="btn ghost" type="button">+ Add Soft Skill</button>
+        </div>
+        <div id="softSkillsContainer" class="stack"></div>
+      </section>
+
+      <section class="card section reveal in-view">
+        <div class="section-head">
+          <h2>Experience</h2>
+          <button id="addExperience" class="btn ghost" type="button">+ Add Experience</button>
+        </div>
+        <div id="experienceContainer" class="stack"></div>
+      </section>
+
+      <section class="card section reveal in-view">
+        <div class="section-head">
+          <h2>Certifications</h2>
+          <button id="addCertification" class="btn ghost" type="button">+ Add Certification</button>
+        </div>
+        <div id="certificationsContainer" class="stack"></div>
+      </section>
+
+      <section class="card section reveal in-view">
+        <div class="section-head">
+          <h2>Social Links</h2>
+          <button id="addSocial" class="btn ghost" type="button">+ Add Link</button>
+        </div>
+        <div id="socialsContainer" class="stack"></div>
+      </section>
+
+      <section class="card section reveal in-view">
+        <div class="section-head">
+          <h2>Projects</h2>
+          <button id="addProject" class="btn ghost" type="button">+ Add Project</button>
+        </div>
+        <div id="projectsContainer" class="stack"></div>
+      </section>
+
+      <section class="card section action-row reveal in-view">
+        <button id="saveBtn" class="btn primary" type="button">Save Changes</button>
+        <p id="status" class="status"></p>
+      </section>
+    </div>
+
+    <section id="lockedSection" class="card section reveal in-view hidden">
+      <h2>Session Expired</h2>
+      <p class="status">Login again to continue editing portfolio content.</p>
+      <button id="reloginBtn" class="btn primary" type="button">Back To Login</button>
+    </section>
+  </main>
+
+  <script src="/js/admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,61 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aswin Paudel | Portfolio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Merienda:wght@400;600;700&family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/home.css">
+</head>
+<body class="home-body">
+  <div class="noise"></div>
+  <header class="home-nav container">
+    <a class="logo" href="/">AP</a>
+    <nav>
+      <a href="/contact">Contact</a>
+      <button id="soundToggle" class="sound-toggle" type="button" aria-pressed="false">Sound: Off</button>
+    </nav>
+  </header>
+
+  <main class="container home-main">
+    <section class="intro">
+      <p class="eyebrow">Living Bento Portfolio</p>
+      <h1 id="name">Aswin Paudel</h1>
+      <p id="role" class="role">Full-Stack Developer</p>
+      <p id="bio" class="bio">Building expressive web products with strong UX and production-grade engineering.</p>
+      <img id="profileImage" class="home-profile-image" alt="Profile picture">
+      <audio id="profileAudio" class="profile-audio" controls preload="none"></audio>
+      <video id="profileVideo" class="profile-video" controls preload="metadata"></video>
+    </section>
+
+    <section class="quick-panels">
+      <article class="quick-card">
+        <h2>Technical Skills</h2>
+        <div id="technicalSkillsPreview" class="quick-list"></div>
+      </article>
+      <article class="quick-card">
+        <h2>Soft Skills</h2>
+        <div id="softSkillsPreview" class="quick-list"></div>
+      </article>
+      <article class="quick-card">
+        <h2>Certifications</h2>
+        <div id="certificationsPreview" class="quick-list"></div>
+      </article>
+    </section>
+
+    <section id="bentoGrid" class="bento-grid" aria-label="Portfolio Bento Grid"></section>
+  </main>
+
+  <div id="caseOverlay" class="case-overlay" aria-hidden="true">
+    <button id="closeCase" class="close-case" aria-label="Close case study">Close</button>
+    <article id="casePanel" class="case-panel" role="dialog" aria-modal="true">
+      <div id="caseContent" class="case-content"></div>
+    </article>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+  <script src="/js/main.js"></script>
+</body>
+</html>
