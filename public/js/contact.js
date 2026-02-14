@@ -26,10 +26,34 @@ function setLink(id, href, label) {
   }
 }
 
+function setBrand(profile = {}) {
+  const textNode = document.getElementById('brandLogoText');
+  const imageNode = document.getElementById('brandLogoImage');
+
+  const logoText = String(profile.logoText || profile.name || 'AP').trim().slice(0, 2).toUpperCase();
+  if (textNode) {
+    textNode.textContent = logoText || 'AP';
+  }
+
+  if (!imageNode) return;
+  const logoUrl = String(profile.logoImageUrl || '').trim();
+  if (logoUrl) {
+    imageNode.src = logoUrl;
+    imageNode.classList.add('visible');
+    if (textNode) textNode.classList.add('hidden');
+    return;
+  }
+
+  imageNode.classList.remove('visible');
+  imageNode.removeAttribute('src');
+  if (textNode) textNode.classList.remove('hidden');
+}
+
 (async function init() {
   try {
     const { profile } = await loadPortfolio();
     document.title = `Contact | ${profile.name}`;
+    setBrand(profile);
 
     setText('contactBio', profile.bio);
     setText('emailValue', profile.email);

@@ -10,52 +10,98 @@
   <link rel="stylesheet" href="/css/home.css">
 </head>
 <body class="home-body">
-  <div class="noise"></div>
-  <header class="home-nav container">
-    <a class="logo" href="/">AP</a>
-    <nav>
-      <a href="/contact">Contact</a>
-      <button id="soundToggle" class="sound-toggle" type="button" aria-pressed="false">Sound: Off</button>
-    </nav>
+  <header class="top-nav" id="top">
+    <div class="container nav-inner">
+      <a class="brand" href="#top" aria-label="Home">
+        <img id="brandLogoImage" class="brand-logo-image" alt="Brand logo">
+        <span id="brandLogoText" class="brand-logo-text">AP</span>
+      </a>
+      <nav aria-label="Primary">
+        <a class="nav-link" href="#about">About</a>
+        <a class="nav-link" href="#projects">Projects</a>
+        <a class="nav-link" href="#certifications">Certifications</a>
+        <a class="nav-link" href="#books">Books</a>
+        <a class="nav-link" href="#contact">Contact</a>
+      </nav>
+    </div>
   </header>
 
-  <main class="container home-main">
-    <section class="intro">
-      <p class="eyebrow">Living Bento Portfolio</p>
-      <h1 id="name">Aswin Paudel</h1>
-      <p id="role" class="role">Full-Stack Developer</p>
-      <p id="bio" class="bio">Building expressive web products with strong UX and production-grade engineering.</p>
-      <img id="profileImage" class="home-profile-image" alt="Profile picture">
-      <audio id="profileAudio" class="profile-audio" controls preload="none"></audio>
-      <video id="profileVideo" class="profile-video" controls preload="metadata"></video>
+  <main class="container page-shell" id="contentRoot">
+    <section id="about" class="hero section reveal">
+      <div class="hero-copy">
+        <p class="eyebrow">Security Portfolio</p>
+        <h1 id="name">Aswin Paudel</h1>
+        <p id="heroLine" class="hero-line">Cybersecurity Engineer focused on Web Security and Forensics using Next.js, Firebase, and Node.js.</p>
+        <p id="bio" class="bio"></p>
+        <div class="hero-cta">
+          <a class="btn primary" href="#projects">View Projects</a>
+          <a id="cvBtn" class="btn ghost" href="#" target="_blank" rel="noreferrer">Download CV</a>
+        </div>
+        <div id="credibilityRow" class="credibility-row skeleton-group" aria-live="polite"></div>
+      </div>
+      <div class="hero-media">
+        <img id="profileImage" class="profile-image" alt="Profile photo">
+        <audio id="profileAudio" class="profile-audio" controls preload="none"></audio>
+        <video id="profileVideo" class="profile-video" controls preload="metadata"></video>
+      </div>
     </section>
 
-    <section class="quick-panels">
-      <article class="quick-card">
+    <section class="section quick-grid reveal" aria-label="Skills and Certifications">
+      <article class="panel">
         <h2>Technical Skills</h2>
-        <div id="technicalSkillsPreview" class="quick-list"></div>
+        <div id="technicalSkillsPreview" class="chip-list skeleton-group"></div>
       </article>
-      <article class="quick-card">
+      <article class="panel">
         <h2>Soft Skills</h2>
-        <div id="softSkillsPreview" class="quick-list"></div>
-      </article>
-      <article class="quick-card">
-        <h2>Certifications</h2>
-        <div id="certificationsPreview" class="quick-list"></div>
+        <div id="softSkillsPreview" class="chip-list skeleton-group"></div>
       </article>
     </section>
 
-    <section id="bentoGrid" class="bento-grid" aria-label="Portfolio Bento Grid"></section>
+    <section id="projects" class="section reveal">
+      <div class="section-header">
+        <div>
+          <h2>Featured Projects</h2>
+          <p>Selected projects with stack, summary, and live links.</p>
+        </div>
+        <a class="btn ghost" href="/projects">See More</a>
+      </div>
+      <div id="projectsGrid" class="projects-grid"></div>
+    </section>
+
+    <section id="certifications" class="section reveal">
+      <div class="section-header">
+        <div>
+          <h2>Featured Certifications</h2>
+          <p>Verified certifications by category and issuer.</p>
+        </div>
+        <a class="btn ghost" href="/certifications">See More</a>
+      </div>
+      <div id="certificationsGrid" class="certifications-grid"></div>
+    </section>
+
+    <section id="books" class="section reveal">
+      <div class="section-header">
+        <div>
+          <h2>Read Books</h2>
+          <p>Learning log grouped by categories.</p>
+        </div>
+        <a class="btn ghost" href="/books">See More</a>
+      </div>
+      <div id="booksGrid" class="certifications-grid"></div>
+    </section>
+
+    <section id="contact" class="section reveal contact-box">
+      <h2>Contact</h2>
+      <p id="contactLine">Open to security engineering, CTF, and forensics-focused opportunities.</p>
+      <div class="contact-actions">
+        <a id="emailBtn" class="btn primary" href="#">Email</a>
+        <a class="btn ghost" href="/contact">Open Contact Page</a>
+      </div>
+    </section>
   </main>
 
-  <div id="caseOverlay" class="case-overlay" aria-hidden="true">
-    <button id="closeCase" class="close-case" aria-label="Close case study">Close</button>
-    <article id="casePanel" class="case-panel" role="dialog" aria-modal="true">
-      <div id="caseContent" class="case-content"></div>
-    </article>
-  </div>
+  <button id="backToTop" class="back-to-top" type="button" aria-label="Back to top">Top</button>
 
-  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
   <script src="/js/main.js"></script>
 </body>
 </html>

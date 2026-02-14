@@ -15,10 +15,16 @@
   <div class="bg-shape shape-three"></div>
 
   <header class="topbar container">
-    <a class="brand" href="/">AP</a>
+    <a class="brand" href="/" aria-label="Home">
+      <img id="brandLogoImage" class="brand-logo-image" alt="Brand logo">
+      <span id="brandLogoText" class="brand-logo-text">AP</span>
+    </a>
     <nav>
       <a href="/">Home</a>
       <a href="/#projects">Projects</a>
+      <a href="/#certifications">Certifications</a>
+      <a href="/#books">Books</a>
+      <a href="/contact" aria-current="page">Contact</a>
     </nav>
   </header>
 
@@ -50,12 +56,6 @@
       </article>
     </section>
 
-    <section class="card section reveal in-view contact-note">
-      <h2>Workflow</h2>
-      <p>1. Intro call and scope clarification.</p>
-      <p>2. UX-first solution planning with timeline.</p>
-      <p>3. Build, iterate, and launch with measurable quality.</p>
-    </section>
   </main>
 
   <script src="/js/contact.js"></script>

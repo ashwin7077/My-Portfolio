@@ -38,19 +38,121 @@
     </section>
 
     <div id="editorSection" class="hidden">
-      <section class="card section reveal in-view">
+      <section class="card section reveal in-view admin-sidebar-shell">
+        <div class="admin-sidebar-header">
+          <p class="eyebrow">Navigation</p>
+          <h2>Content Sections</h2>
+        </div>
+        <p class="hint">Use this menu to jump directly to the section you want to edit.</p>
+        <nav class="admin-clusters" aria-label="Editor Sections">
+          <div class="cluster">
+            <p class="cluster-title">Appearance</p>
+            <div class="cluster-links">
+              <button class="cluster-link" data-target="admin-theme" type="button">Theme</button>
+              <button class="cluster-link" data-target="admin-profile" type="button">Profile</button>
+            </div>
+          </div>
+          <div class="cluster">
+            <p class="cluster-title">Professional</p>
+            <div class="cluster-links">
+              <button class="cluster-link" data-target="admin-skills-tech" type="button">Technical Skills</button>
+              <button class="cluster-link" data-target="admin-skills-soft" type="button">Soft Skills</button>
+              <button class="cluster-link" data-target="admin-experience" type="button">Experience</button>
+              <button class="cluster-link" data-target="admin-projects" type="button">Projects</button>
+            </div>
+          </div>
+          <div class="cluster">
+            <p class="cluster-title">Learning</p>
+            <div class="cluster-links">
+              <button class="cluster-link" data-target="admin-certifications" type="button">Certifications</button>
+              <button class="cluster-link" data-target="admin-books" type="button">Books</button>
+            </div>
+          </div>
+          <div class="cluster">
+            <p class="cluster-title">Meta</p>
+            <div class="cluster-links">
+              <button class="cluster-link" data-target="admin-credibility" type="button">Credibility</button>
+              <button class="cluster-link" data-target="admin-socials" type="button">Socials</button>
+            </div>
+          </div>
+        </nav>
+      </section>
+
+      <section class="card section admin-dashboard-head">
         <div class="section-head">
-          <h2>Editor</h2>
-          <button id="logoutBtn" class="btn ghost" type="button">Logout</button>
+          <h2>Dashboard</h2>
+          <div class="section-tools">
+            <button id="logoutBtn" class="btn ghost" type="button">Logout</button>
+            <button id="saveBtn" class="btn primary" type="button">Publish Site</button>
+          </div>
+        </div>
+        <div class="admin-kpi-grid">
+          <article class="admin-kpi"><p>Projects</p><strong id="kpiProjects">0</strong></article>
+          <article class="admin-kpi"><p>Books</p><strong id="kpiBooks">0</strong></article>
+          <article class="admin-kpi"><p>Certifications</p><strong id="kpiCertifications">0</strong></article>
+          <article class="admin-kpi"><p>Experience</p><strong id="kpiExperience">0</strong></article>
+        </div>
+        <div class="section-tools">
+          <button class="btn ghost dashboard-link" data-target="admin-projects" type="button">New Project</button>
+          <button class="btn ghost dashboard-link" data-target="admin-books" type="button">Log Book</button>
+          <button class="btn ghost dashboard-link" data-target="admin-certifications" type="button">Add Certification</button>
+        </div>
+        <p class="hint">Use the side navigation to jump quickly and publish when changes are ready.</p>
+        <p id="status" class="status"></p>
+      </section>
+
+      <section id="admin-credibility" class="card section reveal in-view">
+        <div class="section-head">
+          <h2>Credibility Metrics</h2>
+          <button id="addCredibility" class="btn ghost" type="button">+ Add Metric</button>
+        </div>
+        <div id="credibilityContainer" class="stack"></div>
+      </section>
+
+      <section id="admin-theme" class="card section reveal in-view">
+        <div class="section-head">
+          <h2>Theme</h2>
+          <p class="hint">These colors update the public portfolio instantly after save.</p>
+        </div>
+        <div class="grid two">
+          <div class="field color-field"><span>Background</span><div class="color-pair"><input id="themeBg" type="color" value="#080b14"><input id="themeBgHex" type="text" value="#080b14" placeholder="#080b14"></div></div>
+          <div class="field color-field"><span>Surface</span><div class="color-pair"><input id="themeSurface" type="color" value="#101625"><input id="themeSurfaceHex" type="text" value="#101625" placeholder="#101625"></div></div>
+          <div class="field color-field"><span>Text</span><div class="color-pair"><input id="themeText" type="color" value="#e9eefc"><input id="themeTextHex" type="text" value="#e9eefc" placeholder="#e9eefc"></div></div>
+          <div class="field color-field"><span>Muted Text</span><div class="color-pair"><input id="themeMuted" type="color" value="#a9b3cc"><input id="themeMutedHex" type="text" value="#a9b3cc" placeholder="#a9b3cc"></div></div>
+          <div class="field color-field"><span>Accent</span><div class="color-pair"><input id="themeAccent" type="color" value="#4da3ff"><input id="themeAccentHex" type="text" value="#4da3ff" placeholder="#4da3ff"></div></div>
+          <div class="field color-field"><span>Border Line</span><div class="color-pair"><input id="themeLine" type="color" value="#2a3958"><input id="themeLineHex" type="text" value="#2a3958" placeholder="#2a3958"></div></div>
+        </div>
+        <div id="themePreview" class="theme-preview">
+          <span>Preview</span>
+          <button class="btn primary" type="button">Primary</button>
+          <button class="btn ghost" type="button">Ghost</button>
         </div>
       </section>
 
-      <section class="card section reveal in-view">
+      <section id="admin-profile" class="card section reveal in-view">
         <h2>Profile</h2>
         <div class="grid two">
-          <label class="field full"><span>Profile Image URL (GitHub raw link)</span><input id="profileImageUrl" type="text" placeholder="https://raw.githubusercontent.com/.../profile.jpg"></label>
+          <label class="field"><span>Logo Text</span><input id="logoText" type="text" placeholder="AP"></label>
+          <label class="field full"><span>Logo Image URL</span><input id="logoImageUrl" type="text" placeholder="https://.../logo.png"></label>
+          <div class="field full upload-box">
+            <span>Upload Logo (or use URL above)</span>
+            <div class="upload-row">
+              <input id="logoImageFile" type="file" accept="image/*">
+              <button id="uploadLogoBtn" class="btn ghost" type="button">Upload Logo</button>
+            </div>
+          </div>
+          <label class="field full"><span>Profile Image URL</span><input id="profileImageUrl" type="text" placeholder="https://.../profile.jpg"></label>
+          <div class="field full upload-box">
+            <span>Upload Profile Picture (or use URL above)</span>
+            <div class="upload-row">
+              <input id="profileImageFile" type="file" accept="image/*">
+              <button id="uploadProfileBtn" class="btn ghost" type="button">Upload Profile</button>
+            </div>
+          </div>
           <label class="field full"><span>Profile Audio URL (GitHub raw link)</span><input id="profileAudioUrl" type="text" placeholder="https://raw.githubusercontent.com/.../intro.mp3"></label>
           <label class="field full"><span>Profile Video URL (GitHub raw link)</span><input id="profileVideoUrl" type="text" placeholder="https://raw.githubusercontent.com/.../intro.mp4"></label>
+          <label class="field full"><span>Niche</span><input id="niche" type="text" placeholder="Web Security, CTF, Forensics"></label>
+          <label class="field full"><span>CV URL</span><input id="cvUrl" type="text" placeholder="https://raw.githubusercontent.com/.../cv.pdf"></label>
           <label class="field"><span>Name</span><input id="name" type="text"></label>
           <label class="field"><span>Role</span><input id="role" type="text"></label>
           <label class="field"><span>Location</span><input id="location" type="text"></label>
@@ -62,7 +164,7 @@
         </div>
       </section>
 
-      <section class="card section reveal in-view">
+      <section id="admin-skills-tech" class="card section reveal in-view">
         <div class="section-head">
           <h2>Technical Skills</h2>
           <button id="addTechnicalSkill" class="btn ghost" type="button">+ Add Technical Skill</button>
@@ -70,7 +172,7 @@
         <div id="technicalSkillsContainer" class="stack"></div>
       </section>
 
-      <section class="card section reveal in-view">
+      <section id="admin-skills-soft" class="card section reveal in-view">
         <div class="section-head">
           <h2>Soft Skills</h2>
           <button id="addSoftSkill" class="btn ghost" type="button">+ Add Soft Skill</button>
@@ -78,7 +180,7 @@
         <div id="softSkillsContainer" class="stack"></div>
       </section>
 
-      <section class="card section reveal in-view">
+      <section id="admin-experience" class="card section reveal in-view">
         <div class="section-head">
           <h2>Experience</h2>
           <button id="addExperience" class="btn ghost" type="button">+ Add Experience</button>
@@ -86,15 +188,38 @@
         <div id="experienceContainer" class="stack"></div>
       </section>
 
-      <section class="card section reveal in-view">
+      <section id="admin-certifications" class="card section reveal in-view">
         <div class="section-head">
           <h2>Certifications</h2>
-          <button id="addCertification" class="btn ghost" type="button">+ Add Certification</button>
+          <div class="section-tools">
+            <input id="searchCertifications" type="text" placeholder="Search certifications...">
+            <button id="expandCertifications" class="btn ghost" type="button">Expand All</button>
+            <button id="collapseCertifications" class="btn ghost" type="button">Collapse All</button>
+            <button id="addCertification" class="btn ghost" type="button">+ Add Certification</button>
+          </div>
         </div>
         <div id="certificationsContainer" class="stack"></div>
       </section>
 
-      <section class="card section reveal in-view">
+      <section id="admin-books" class="card section reveal in-view">
+        <div class="section-head">
+          <h2>Read Books</h2>
+          <div class="section-tools">
+            <input id="searchBooks" type="text" placeholder="Search books...">
+            <button id="expandBooks" class="btn ghost" type="button">Expand All</button>
+            <button id="collapseBooks" class="btn ghost" type="button">Collapse All</button>
+            <button id="addBook" class="btn ghost" type="button">+ Add Book</button>
+          </div>
+        </div>
+        <div class="subsection-head">
+          <h3>Book Categories (Create, Edit, Reorder)</h3>
+          <button id="addBookCategory" class="btn ghost" type="button">+ Add Category</button>
+        </div>
+        <div id="bookCategoriesContainer" class="stack"></div>
+        <div id="booksContainer" class="stack"></div>
+      </section>
+
+      <section id="admin-socials" class="card section reveal in-view">
         <div class="section-head">
           <h2>Social Links</h2>
           <button id="addSocial" class="btn ghost" type="button">+ Add Link</button>
@@ -102,17 +227,22 @@
         <div id="socialsContainer" class="stack"></div>
       </section>
 
-      <section class="card section reveal in-view">
+      <section id="admin-projects" class="card section reveal in-view">
         <div class="section-head">
           <h2>Projects</h2>
-          <button id="addProject" class="btn ghost" type="button">+ Add Project</button>
+          <div class="section-tools">
+            <input id="searchProjects" type="text" placeholder="Search projects...">
+            <button id="expandProjects" class="btn ghost" type="button">Expand All</button>
+            <button id="collapseProjects" class="btn ghost" type="button">Collapse All</button>
+            <button id="addProject" class="btn ghost" type="button">+ Add Project</button>
+          </div>
         </div>
+        <div class="subsection-head">
+          <h3>Project Categories (Create, Edit, Reorder)</h3>
+          <button id="addProjectCategory" class="btn ghost" type="button">+ Add Category</button>
+        </div>
+        <div id="projectCategoriesContainer" class="stack"></div>
         <div id="projectsContainer" class="stack"></div>
-      </section>
-
-      <section class="card section action-row reveal in-view">
-        <button id="saveBtn" class="btn primary" type="button">Save Changes</button>
-        <p id="status" class="status"></p>
       </section>
     </div>
 

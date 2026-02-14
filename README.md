@@ -21,19 +21,18 @@ The app uses Firebase Firestore via Node.js backend.
 ```bash
 npm install
 ```
-2. Copy environment template
-```bash
-cp .env.example .env
-```
-3. Fill `.env` values:
+2. Fill `.env` values:
 - `ADMIN_USERNAME` and `ADMIN_PASSWORD` for admin panel login
 - `ADMIN_SESSION_SECRET` for signing admin session cookies
 - Firebase Admin credentials (`FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`)
+- `FIREBASE_STORAGE_BUCKET` (recommended, e.g. `portfolio-c2c2a.firebasestorage.app`)
+- `UPLOAD_IMAGE_LIMIT_MB` (optional, default is `15`)
 
 Note:
 - Your Firebase Web config (`apiKey`, `authDomain`, `appId`, etc.) is not enough for this backend.
 - This app writes Firestore from Node.js, so it needs a Firebase service account key.
-- Host media files in GitHub and paste the raw URLs in admin fields.
+- You can either paste image URLs in admin fields or upload images directly to Firebase Storage.
+- Upload endpoint: `/api/admin/upload-image` (admin-auth only).
 
 4. Start app
 ```bash
