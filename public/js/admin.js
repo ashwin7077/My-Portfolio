@@ -493,32 +493,48 @@ function buildCategoryOptions(categories = [], selected = '') {
 
 function setupRichEditor(wrapper, initialValue = '', placeholder = 'Click to write detailed description...') {
   if (!wrapper) return;
+
+  const sep = '<span class="tb-sep"></span>';
   wrapper.innerHTML = `
-    <div class="rich-toolbar">
-      <button type="button" class="btn ghost" data-action="insert-menu" title="Insert menu">+</button>
-      <button type="button" class="btn ghost" data-action="bold" title="Bold (Ctrl/Cmd+B)">B</button>
-      <button type="button" class="btn ghost" data-action="italic" title="Italic (Ctrl/Cmd+I)">I</button>
-      <button type="button" class="btn ghost" data-action="underline" title="Underline (Ctrl/Cmd+U)">U</button>
-      <button type="button" class="btn ghost" data-action="h1" title="H1 (Ctrl/Cmd+Alt+1)">H1</button>
-      <button type="button" class="btn ghost" data-action="h2" title="H2 (Ctrl/Cmd+Alt+2)">H2</button>
-      <button type="button" class="btn ghost" data-action="quote" title="Block quote (Ctrl/Cmd+Alt+5)">"</button>
-      <button type="button" class="btn ghost" data-action="pull-quote" title="Pull quote">Pull</button>
-      <button type="button" class="btn ghost" data-action="dropcaps" title="Drop caps">Drop</button>
-      <button type="button" class="btn ghost" data-action="insertUnorderedList" title="Bulleted list">• List</button>
-      <button type="button" class="btn ghost" data-action="insertOrderedList" title="Numbered list">1. List</button>
-      <button type="button" class="btn ghost" data-action="createLink" title="Link (Ctrl/Cmd+K)">Link</button>
-      <button type="button" class="btn ghost" data-action="inline-code" title="Inline code">Code</button>
-      <button type="button" class="btn ghost" data-action="code-block" title="Code block (Ctrl/Cmd+Alt+6)">&grave;&grave;&grave;</button>
-      <button type="button" class="btn ghost" data-action="separator" title="Separator (Ctrl/Cmd+Enter)">---</button>
-      <button type="button" class="btn ghost" data-action="removeFormat" title="Clear formatting">Clear</button>
-      <div class="insert-popover hidden">
-        <button type="button" class="btn ghost" data-action="insert-image">Image</button>
-        <button type="button" class="btn ghost" data-action="insert-video">Video</button>
-        <button type="button" class="btn ghost" data-action="insert-embed">Embed</button>
-        <button type="button" class="btn ghost" data-action="separator">Separator</button>
+    <div class="rich-editor-wrap">
+      <div class="rich-toolbar">
+        <button type="button" class="btn ghost" data-action="undo" title="Undo (Ctrl+Z)">↩</button>
+        <button type="button" class="btn ghost" data-action="redo" title="Redo (Ctrl+Y)">↪</button>
+        ${sep}
+        <button type="button" class="btn ghost" data-action="bold" title="Bold (Ctrl+B)"><b>B</b></button>
+        <button type="button" class="btn ghost" data-action="italic" title="Italic (Ctrl+I)"><i>I</i></button>
+        <button type="button" class="btn ghost" data-action="underline" title="Underline (Ctrl+U)"><u>U</u></button>
+        <button type="button" class="btn ghost" data-action="strikeThrough" title="Strikethrough"><s>S</s></button>
+        ${sep}
+        <button type="button" class="btn ghost" data-action="h1" title="Heading 1 (Ctrl+Alt+1)">H1</button>
+        <button type="button" class="btn ghost" data-action="h2" title="Heading 2 (Ctrl+Alt+2)">H2</button>
+        <button type="button" class="btn ghost" data-action="formatBlock-p" title="Normal text">¶</button>
+        ${sep}
+        <button type="button" class="btn ghost" data-action="justifyLeft" title="Align left">⇤</button>
+        <button type="button" class="btn ghost" data-action="justifyCenter" title="Align center">⇔</button>
+        <button type="button" class="btn ghost" data-action="justifyRight" title="Align right">⇥</button>
+        ${sep}
+        <button type="button" class="btn ghost" data-action="insertUnorderedList" title="Bullet list">• List</button>
+        <button type="button" class="btn ghost" data-action="insertOrderedList" title="Numbered list">1. List</button>
+        <button type="button" class="btn ghost" data-action="indent" title="Indent">→</button>
+        <button type="button" class="btn ghost" data-action="outdent" title="Outdent">←</button>
+        ${sep}
+        <button type="button" class="btn ghost" data-action="quote" title="Block quote (Ctrl+Alt+5)">"</button>
+        <button type="button" class="btn ghost" data-action="createLink" title="Link (Ctrl+K)">🔗</button>
+        <button type="button" class="btn ghost" data-action="inline-code" title="Inline code">Code</button>
+        <button type="button" class="btn ghost" data-action="code-block" title="Code block">\`\`\`</button>
+        <button type="button" class="btn ghost" data-action="separator" title="Separator">—</button>
+        ${sep}
+        <button type="button" class="btn ghost" data-action="insert-menu" title="Insert media">+ Insert</button>
+        <button type="button" class="btn ghost" data-action="removeFormat" title="Clear all formatting">✕ Clear</button>
+        <div class="insert-popover hidden">
+          <button type="button" class="btn ghost" data-action="insert-image">📷 Image</button>
+          <button type="button" class="btn ghost" data-action="insert-video">🎬 Video</button>
+          <button type="button" class="btn ghost" data-action="insert-embed">📌 Embed</button>
+        </div>
       </div>
+      <div class="rich-editor" contenteditable="true"></div>
     </div>
-    <div class="rich-editor" contenteditable="true"></div>
   `;
 
   const editor = wrapper.querySelector('.rich-editor');
@@ -604,6 +620,9 @@ function setupRichEditor(wrapper, initialValue = '', placeholder = 'Click to wri
       case 'h2':
         document.execCommand('formatBlock', false, 'H2');
         return;
+      case 'formatBlock-p':
+        document.execCommand('formatBlock', false, 'P');
+        return;
       case 'quote':
         document.execCommand('formatBlock', false, 'BLOCKQUOTE');
         return;
@@ -665,15 +684,27 @@ function setupRichEditor(wrapper, initialValue = '', placeholder = 'Click to wri
     }
   };
 
+  // Track active formatting states in toolbar
+  const updateToolbarState = () => {
+    const cmds = { bold: 'bold', italic: 'italic', underline: 'underline', strikeThrough: 'strikeThrough', insertUnorderedList: 'insertUnorderedList', insertOrderedList: 'insertOrderedList' };
+    wrapper.querySelectorAll('.rich-toolbar .btn.ghost[data-action]').forEach((btn) => {
+      const a = btn.dataset.action;
+      if (cmds[a]) btn.classList.toggle('active', document.queryCommandState(cmds[a]));
+    });
+  };
+
   wrapper.addEventListener('click', (event) => {
     const target = event.target;
     if (!(target instanceof HTMLElement)) return;
-    const action = target.dataset.action;
-    if (!action) return;
-    applyAction(action);
+    const btn = target.closest('[data-action]');
+    if (!btn) return;
+    applyAction(btn.dataset.action);
+    setTimeout(updateToolbarState, 10);
   });
 
   editor.addEventListener('input', normalizeEmptyEditor);
+  editor.addEventListener('keyup', updateToolbarState);
+  editor.addEventListener('mouseup', updateToolbarState);
   editor.addEventListener('blur', () => {
     smartTypography();
     normalizeEmptyEditor();
