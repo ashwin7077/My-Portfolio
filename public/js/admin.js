@@ -491,42 +491,258 @@ function buildCategoryOptions(categories = [], selected = '') {
   }).join('');
 }
 
-function setupRichEditor(wrapper, initialValue = '') {
+function setupRichEditor(wrapper, initialValue = '', placeholder = 'Click to write detailed description...') {
   if (!wrapper) return;
   wrapper.innerHTML = `
     <div class="rich-toolbar">
-      <button type="button" class="btn ghost" data-cmd="bold">B</button>
-      <button type="button" class="btn ghost" data-cmd="italic">I</button>
-      <button type="button" class="btn ghost" data-cmd="underline">U</button>
-      <button type="button" class="btn ghost" data-cmd="insertUnorderedList">• List</button>
-      <button type="button" class="btn ghost" data-cmd="insertOrderedList">1. List</button>
-      <button type="button" class="btn ghost" data-cmd="createLink">Link</button>
-      <button type="button" class="btn ghost" data-cmd="removeFormat">Clear</button>
+      <button type="button" class="btn ghost" data-action="insert-menu" title="Insert menu">+</button>
+      <button type="button" class="btn ghost" data-action="bold" title="Bold (Ctrl/Cmd+B)">B</button>
+      <button type="button" class="btn ghost" data-action="italic" title="Italic (Ctrl/Cmd+I)">I</button>
+      <button type="button" class="btn ghost" data-action="underline" title="Underline (Ctrl/Cmd+U)">U</button>
+      <button type="button" class="btn ghost" data-action="h1" title="H1 (Ctrl/Cmd+Alt+1)">H1</button>
+      <button type="button" class="btn ghost" data-action="h2" title="H2 (Ctrl/Cmd+Alt+2)">H2</button>
+      <button type="button" class="btn ghost" data-action="quote" title="Block quote (Ctrl/Cmd+Alt+5)">"</button>
+      <button type="button" class="btn ghost" data-action="pull-quote" title="Pull quote">Pull</button>
+      <button type="button" class="btn ghost" data-action="dropcaps" title="Drop caps">Drop</button>
+      <button type="button" class="btn ghost" data-action="insertUnorderedList" title="Bulleted list">• List</button>
+      <button type="button" class="btn ghost" data-action="insertOrderedList" title="Numbered list">1. List</button>
+      <button type="button" class="btn ghost" data-action="createLink" title="Link (Ctrl/Cmd+K)">Link</button>
+      <button type="button" class="btn ghost" data-action="inline-code" title="Inline code">Code</button>
+      <button type="button" class="btn ghost" data-action="code-block" title="Code block (Ctrl/Cmd+Alt+6)">&grave;&grave;&grave;</button>
+      <button type="button" class="btn ghost" data-action="separator" title="Separator (Ctrl/Cmd+Enter)">---</button>
+      <button type="button" class="btn ghost" data-action="removeFormat" title="Clear formatting">Clear</button>
+      <div class="insert-popover hidden">
+        <button type="button" class="btn ghost" data-action="insert-image">Image</button>
+        <button type="button" class="btn ghost" data-action="insert-video">Video</button>
+        <button type="button" class="btn ghost" data-action="insert-embed">Embed</button>
+        <button type="button" class="btn ghost" data-action="separator">Separator</button>
+      </div>
     </div>
     <div class="rich-editor" contenteditable="true"></div>
   `;
 
   const editor = wrapper.querySelector('.rich-editor');
+  const insertPopover = wrapper.querySelector('.insert-popover');
+  editor.setAttribute('data-placeholder', placeholder);
   editor.innerHTML = initialValue || '';
+
+  const youtubeEmbed = (url) => {
+    const value = String(url || '').trim();
+    const id = value.match(/(?:v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{6,})/)?.[1];
+    return id ? `https://www.youtube.com/embed/${id}` : '';
+  };
+
+  const closestParagraph = () => {
+    const selection = window.getSelection();
+    if (!selection || !selection.anchorNode) return null;
+    const node = selection.anchorNode.nodeType === 1 ? selection.anchorNode : selection.anchorNode.parentNode;
+    return node?.closest?.('p');
+  };
+
+  const wrapSelectionInlineCode = () => {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return;
+    const range = selection.getRangeAt(0);
+    const code = document.createElement('code');
+    code.textContent = selection.toString();
+    range.deleteContents();
+    range.insertNode(code);
+    selection.removeAllRanges();
+  };
+
+  const insertHtml = (html) => {
+    editor.focus();
+    document.execCommand('insertHTML', false, html);
+  };
+
+  const normalizeEmptyEditor = () => {
+    const text = (editor.textContent || '').replace(/\u00a0/g, ' ').trim();
+    if (!text && !editor.querySelector('img,video,iframe,hr,pre,blockquote,h1,h2,ul,ol')) {
+      editor.innerHTML = '';
+    }
+  };
+
+  const smartTypography = () => {
+    const walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT);
+    const replacements = [];
+    let node = walker.nextNode();
+    while (node) {
+      const parentTag = node.parentElement?.tagName || '';
+      if (!['CODE', 'PRE'].includes(parentTag)) {
+        const updated = node.nodeValue
+          .replace(/--/g, '—')
+          .replace(/"([^"]+)"/g, '“$1”')
+          .replace(/'([^']+)'/g, '‘$1’');
+        if (updated !== node.nodeValue) {
+          replacements.push([node, updated]);
+        }
+      }
+      node = walker.nextNode();
+    }
+    replacements.forEach(([textNode, value]) => {
+      textNode.nodeValue = value;
+    });
+  };
+
+  const applyAction = (action) => {
+    if (!action) return;
+    editor.focus();
+
+    switch (action) {
+      case 'insert-menu':
+        insertPopover?.classList.toggle('hidden');
+        return;
+      case 'createLink': {
+        const url = window.prompt('Enter URL');
+        if (!url) return;
+        document.execCommand('createLink', false, url);
+        return;
+      }
+      case 'h1':
+        document.execCommand('formatBlock', false, 'H1');
+        return;
+      case 'h2':
+        document.execCommand('formatBlock', false, 'H2');
+        return;
+      case 'quote':
+        document.execCommand('formatBlock', false, 'BLOCKQUOTE');
+        return;
+      case 'pull-quote': {
+        document.execCommand('formatBlock', false, 'BLOCKQUOTE');
+        const block = window.getSelection()?.anchorNode?.parentElement?.closest('blockquote');
+        if (block) block.classList.add('pull-quote');
+        return;
+      }
+      case 'dropcaps': {
+        const paragraph = closestParagraph();
+        if (paragraph && !paragraph.closest('blockquote,h1,h2')) {
+          paragraph.classList.toggle('drop-caps');
+        }
+        return;
+      }
+      case 'inline-code':
+        wrapSelectionInlineCode();
+        return;
+      case 'code-block':
+        insertHtml('<pre><code>// code</code></pre>');
+        return;
+      case 'separator':
+        insertHtml('<hr class="rich-separator">');
+        return;
+      case 'insert-image': {
+        const url = window.prompt('Image URL');
+        if (!url) return;
+        insertHtml(`<img src="${escapeHtml(url)}" alt="">`);
+        insertPopover?.classList.add('hidden');
+        return;
+      }
+      case 'insert-video': {
+        const url = window.prompt('Video URL (YouTube or direct .mp4)');
+        if (!url) return;
+        const yt = youtubeEmbed(url);
+        if (yt) {
+          insertHtml(`<iframe src="${escapeHtml(yt)}" frameborder="0" allowfullscreen></iframe>`);
+        } else {
+          insertHtml(`<video src="${escapeHtml(url)}" controls></video>`);
+        }
+        insertPopover?.classList.add('hidden');
+        return;
+      }
+      case 'insert-embed': {
+        const url = window.prompt('Embed URL (YouTube/X/Instagram/etc.)');
+        if (!url) return;
+        const yt = youtubeEmbed(url);
+        if (yt) {
+          insertHtml(`<iframe src="${escapeHtml(yt)}" frameborder="0" allowfullscreen></iframe>`);
+        } else {
+          insertHtml(`<iframe src="${escapeHtml(url)}" frameborder="0"></iframe>`);
+        }
+        insertPopover?.classList.add('hidden');
+        return;
+      }
+      default:
+        document.execCommand(action, false, null);
+    }
+  };
+
   wrapper.addEventListener('click', (event) => {
     const target = event.target;
     if (!(target instanceof HTMLElement)) return;
-    const cmd = target.dataset.cmd;
-    if (!cmd) return;
-    editor.focus();
-    if (cmd === 'createLink') {
-      const url = window.prompt('Enter URL');
-      if (!url) return;
-      document.execCommand('createLink', false, url);
+    const action = target.dataset.action;
+    if (!action) return;
+    applyAction(action);
+  });
+
+  editor.addEventListener('input', normalizeEmptyEditor);
+  editor.addEventListener('blur', () => {
+    smartTypography();
+    normalizeEmptyEditor();
+  });
+  editor.addEventListener('keydown', (event) => {
+    const key = event.key.toLowerCase();
+    const mod = event.ctrlKey || event.metaKey;
+    if (!mod) return;
+
+    if (key === 'k') {
+      event.preventDefault();
+      applyAction('createLink');
       return;
     }
-    document.execCommand(cmd, false, null);
+    if (key === 'b') {
+      event.preventDefault();
+      applyAction('bold');
+      return;
+    }
+    if (key === 'i') {
+      event.preventDefault();
+      applyAction('italic');
+      return;
+    }
+    if (key === 'u') {
+      event.preventDefault();
+      applyAction('underline');
+      return;
+    }
+    if (event.altKey && key === '1') {
+      event.preventDefault();
+      applyAction('h1');
+      return;
+    }
+    if (event.altKey && key === '2') {
+      event.preventDefault();
+      applyAction('h2');
+      return;
+    }
+    if (event.altKey && key === '5') {
+      event.preventDefault();
+      applyAction('quote');
+      return;
+    }
+    if (event.altKey && key === '6') {
+      event.preventDefault();
+      applyAction('code-block');
+      return;
+    }
+    if (event.key === 'Enter' && mod) {
+      event.preventDefault();
+      applyAction('separator');
+    }
   });
 }
 
 function getRichEditorValue(host) {
   const editor = host?.querySelector('.rich-editor');
   return editor ? editor.innerHTML.trim() : '';
+}
+
+function legacyTextToRichHtml(value = '') {
+  const text = String(value || '').trim();
+  if (!text) return '';
+  const safe = escapeHtml(text)
+    .replace(/\r\n/g, '\n')
+    .replace(/\n{2,}/g, '</p><p>')
+    .replace(/\n/g, '<br>');
+  return `<p>${safe}</p>`;
 }
 
 function updateDashboardStats(payload) {
@@ -708,7 +924,8 @@ function projectCard(project = {}) {
       <label class="field full"><span>Image URL</span><input class="p-image" type="text" value="${escapeHtml(project.imageUrl || '')}" placeholder="https://.../project.jpg"></label>
     </div>
   `;
-  setupRichEditor(body.querySelector('.p-rich-editor'), project.descriptionHtml || '');
+  const projectRichHtml = String(project.descriptionHtml || '').trim() || legacyTextToRichHtml(project.description || '');
+  setupRichEditor(body.querySelector('.p-rich-editor'), projectRichHtml, 'Click to write detailed description...');
 
   const uploadBox = document.createElement('div');
   uploadBox.className = 'field upload-box full';
@@ -791,7 +1008,8 @@ function bookCard(book = {}) {
       </div>
     </div>
   `;
-  setupRichEditor(body.querySelector('.b-rich-editor'), book.descriptionHtml || '');
+  const bookRichHtml = String(book.descriptionHtml || '').trim() || legacyTextToRichHtml(book.description || '');
+  setupRichEditor(body.querySelector('.b-rich-editor'), bookRichHtml, 'Click to write book description...');
 
   const remove = document.createElement('button');
   remove.className = 'btn ghost';

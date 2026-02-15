@@ -8,6 +8,82 @@ const state = {
   blogs: []
 };
 
+function escapeHtml(value = '') {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function longDescriptionHtml(item = {}) {
+  const rich = String(item.descriptionHtml || '').trim();
+  if (rich) return rich;
+  const plain = String(item.description || '').trim();
+  if (!plain) return '';
+  return `<p>${escapeHtml(plain).replace(/\r\n/g, '\n').replace(/\n/g, '<br>')}</p>`;
+}
+
+function certificationDescriptionHtml(item = {}) {
+  const rich = String(item.descriptionHtml || '').trim();
+  if (rich) return rich;
+  const plain = String(item.description || item.details || '').trim();
+  if (!plain) return '';
+  return `<p>${escapeHtml(plain).replace(/\r\n/g, '\n').replace(/\n/g, '<br>')}</p>`;
+}
+
+function blogDescriptionHtml(blog = {}) {
+  const rich = String(blog.descriptionHtml || blog.contentHtml || '').trim();
+  if (rich) return rich;
+  const plain = String(blog.content || blog.description || blog.body || blog.excerpt || '').trim();
+  if (!plain) return '';
+  return `<p>${escapeHtml(plain).replace(/\r\n/g, '\n').replace(/\n/g, '<br>')}</p>`;
+}
+
+function showDetailModal({ title = 'Details', meta = '', content = '', image = '', actions = '' }) {
+  const existing = document.querySelector('.detail-modal');
+  if (existing) existing.remove();
+
+  const modal = document.createElement('div');
+  modal.className = 'detail-modal';
+  modal.innerHTML = `
+    <article class="detail-panel">
+      <div class="detail-panel-head">
+        <div>
+          <h3>${title}</h3>
+          ${meta ? `<p class="detail-panel-meta">${meta}</p>` : ''}
+        </div>
+        <button type="button" class="detail-close" aria-label="Close details">Close</button>
+      </div>
+      ${image ? `<img class="detail-image" src="${image}" alt="${title} image">` : ''}
+      <div class="detail-content">${content || '<p>No detailed description available.</p>'}</div>
+      ${actions ? `<div class="detail-actions">${actions}</div>` : ''}
+    </article>
+  `;
+  document.body.appendChild(modal);
+  document.body.classList.add('modal-open');
+
+  const close = () => {
+    modal.remove();
+    document.body.classList.remove('modal-open');
+    document.removeEventListener('keydown', onKeyDown);
+  };
+
+  const onKeyDown = (event) => {
+    if (event.key === 'Escape') close();
+  };
+
+  modal.addEventListener('click', (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) return;
+    if (target.classList.contains('detail-modal') || target.classList.contains('detail-close')) {
+      close();
+    }
+  });
+  document.addEventListener('keydown', onKeyDown);
+}
+
 function slugify(value = '') {
   return String(value || '')
     .toLowerCase()
@@ -135,8 +211,16 @@ function renderCredibility(credibility = [], projects = []) {
 
 function projectTemplate(project = {}, index = 0) {
   const image = project.imageUrl || project.coverUrl || '';
+  const detailed = longDescriptionHtml(project);
+  const modalMeta = `${project.category || 'General'}${project.tech ? ` | ${project.tech}` : ''}`;
+  const modalActions = `
+    ${project.repoUrl ? `<a class="btn ghost" href="${project.repoUrl}" target="_blank" rel="noreferrer">GitHub</a>` : ''}
+    ${project.demoUrl ? `<a class="btn ghost" href="${project.demoUrl}" target="_blank" rel="noreferrer">Live Demo</a>` : ''}
+  `;
   return `
-    <article class="project-card motion-rise" style="--delay:${Math.min(index, 7) * 70}ms">
+    <article class="project-card motion-rise ${detailed ? 'clickable-card' : ''}" style="--delay:${Math.min(index, 7) * 70}ms"
+      ${detailed ? `data-modal="detail" data-modal-title="${escapeHtml(project.title || 'Project')}" data-modal-meta="${escapeHtml(modalMeta)}"` : ''}
+    >
       ${image ? `<img class="card-image" src="${image}" alt="${project.title || 'Project'} image" loading="lazy">` : ''}
       <div class="cert-head">
         <h3>${project.title || 'Untitled Project'}</h3>
@@ -144,11 +228,12 @@ function projectTemplate(project = {}, index = 0) {
       </div>
       <p><strong>Tech:</strong> ${project.tech || 'N/A'}</p>
       <p class="project-long">${project.summary || 'No summary yet.'}</p>
-      ${project.descriptionHtml ? `<div class="project-long">${project.descriptionHtml}</div>` : ''}
+      ${detailed ? `<div class="detail-source hidden">${detailed}</div>` : ''}
       <div class="project-actions">
         ${project.repoUrl ? `<a class="btn ghost" href="${project.repoUrl}" target="_blank" rel="noreferrer">GitHub</a>` : ''}
         ${project.demoUrl ? `<a class="btn ghost" href="${project.demoUrl}" target="_blank" rel="noreferrer">Live Demo</a>` : ''}
       </div>
+      ${detailed ? `<div class="detail-actions-source hidden">${modalActions}</div>` : ''}
     </article>
   `;
 }
@@ -168,21 +253,20 @@ function renderProjects(projects = []) {
 
 function certificationTemplate(item = {}, index = 0) {
   const certImage = item.imageUrl || (Array.isArray(item.imageUrls) ? item.imageUrls[0] : '');
-  const categorySlug = normalizeCertificationCategory(item.category || '');
-  const certSlug = slugify(item.title || `certification-${index + 1}`) || `certification-${index + 1}`;
-  const detailLink = `/certifications/${categorySlug}/${certSlug}`;
+  const detailed = certificationDescriptionHtml(item);
   return `
-    <a class="cert-card-link motion-rise" style="--delay:${Math.min(index, 5) * 80}ms" href="${detailLink}">
-      <article class="cert-card cert-card-featured">
-        <div class="cert-media">
-          ${certImage ? `<img class="cert-img" src="${certImage}" alt="${item.title || 'Certification'} image" loading="lazy">` : '<div class="cert-img cert-img-empty">No Image</div>'}
-        </div>
-        <div class="cert-meta">
-          <h3 class="cert-title">${item.title || 'Certification'}</h3>
-          <p class="cert-year">${item.date || 'Date not set'}</p>
-        </div>
-      </article>
-    </a>
+    <article class="cert-card cert-card-featured motion-rise ${detailed ? 'clickable-card' : ''}" style="--delay:${Math.min(index, 5) * 80}ms"
+      ${detailed ? `data-modal="detail" data-modal-title="${escapeHtml(item.title || 'Certification')}" data-modal-meta="${escapeHtml(item.issuer || item.category || 'Certification')}${item.date ? ` | ${escapeHtml(item.date)}` : ''}"` : ''}>
+      <div class="cert-media">
+        ${certImage ? `<img class="cert-img" src="${certImage}" alt="${item.title || 'Certification'} image" loading="lazy">` : '<div class="cert-img cert-img-empty">No Image</div>'}
+      </div>
+      <div class="cert-meta">
+        <h3 class="cert-title">${item.title || 'Certification'}</h3>
+        <p class="cert-year">${item.date || 'Date not set'}</p>
+      </div>
+      ${detailed ? `<div class="detail-source hidden">${detailed}</div>` : ''}
+      ${item.credentialUrl ? `<div class="detail-actions-source hidden"><a class="btn ghost" href="${escapeHtml(item.credentialUrl)}" target="_blank" rel="noreferrer">View Credential</a></div>` : ''}
+    </article>
   `;
 }
 
@@ -202,15 +286,17 @@ function renderCertifications(certifications = []) {
 
 function bookCardTemplate(book = {}, index = 0) {
   const image = book.imageUrl || book.profileImageUrl || book.coverUrl || '';
+  const detailed = longDescriptionHtml(book);
   return `
-    <article class="cert-card book-card motion-rise" style="--delay:${Math.min(index, 9) * 60}ms">
+    <article class="cert-card book-card motion-rise ${detailed ? 'clickable-card' : ''}" style="--delay:${Math.min(index, 9) * 60}ms"
+      ${detailed ? `data-modal="detail" data-modal-title="${escapeHtml(book.title || 'Book')}" data-modal-meta="${escapeHtml(book.author || '')}"` : ''}>
       ${image ? `<img class="card-image" src="${image}" alt="${book.title || 'Book'} image" loading="lazy">` : ''}
       <div class="cert-head">
         <h3>${book.title || 'Book'}</h3>
         <span>${book.category || 'General'}</span>
       </div>
       <p>${book.author || ''}</p>
-      ${book.descriptionHtml ? `<div class="project-long">${book.descriptionHtml}</div>` : ''}
+      ${detailed ? `<div class="detail-source hidden">${detailed}</div>` : ''}
     </article>
   `;
 }
@@ -249,13 +335,11 @@ function blogCardTemplate(blog = {}, index = 0) {
   const date = blog.date ? new Date(blog.date).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : 'Date not set';
   const title = blog.title || 'Untitled Blog';
   const excerpt = blog.excerpt || '';
-  const openTag = blog.url
-    ? `<a class="blog-card motion-rise" style="--delay:${Math.min(index, 7) * 70}ms" href="${blog.url}" target="_blank" rel="noreferrer">`
-    : `<article class="blog-card motion-rise" style="--delay:${Math.min(index, 7) * 70}ms">`;
-  const closeTag = blog.url ? '</a>' : '</article>';
+  const detailed = blogDescriptionHtml(blog);
 
   return `
-    ${openTag}
+    <article class="blog-card motion-rise ${detailed ? 'clickable-card' : ''}" style="--delay:${Math.min(index, 7) * 70}ms"
+      ${detailed ? `data-modal="detail" data-modal-title="${escapeHtml(title)}" data-modal-meta="${escapeHtml(date)}"` : ''}>
       <div class="blog-meta">
         <h3 class="blog-title">${title}</h3>
         <p class="blog-date">${date}</p>
@@ -264,8 +348,35 @@ function blogCardTemplate(blog = {}, index = 0) {
       <div class="blog-media">
         ${image ? `<img class="blog-img" src="${image}" alt="${title} image" loading="lazy">` : '<div class="blog-img blog-img-empty">No Image</div>'}
       </div>
-    ${closeTag}
+      ${detailed ? `<div class="detail-source hidden">${detailed}</div>` : ''}
+      ${blog.url ? `<div class="detail-actions-source hidden"><a class="btn ghost" href="${escapeHtml(blog.url)}" target="_blank" rel="noreferrer">Read Full Blog</a></div>` : ''}
+    </article>
   `;
+}
+
+function setupDetailPopups() {
+  document.addEventListener('click', (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) return;
+    if (target.closest('.project-actions a, .detail-actions a')) return;
+
+    const card = target.closest('[data-modal="detail"]');
+    if (!(card instanceof HTMLElement)) return;
+    if (target.closest('a,button,input,textarea,select,label')) return;
+
+    const title = card.dataset.modalTitle || 'Details';
+    const meta = card.dataset.modalMeta || '';
+    const source = card.querySelector('.detail-source');
+    const actionsSource = card.querySelector('.detail-actions-source');
+    const image = card.querySelector('img')?.getAttribute('src') || '';
+    showDetailModal({
+      title,
+      meta,
+      image,
+      content: source?.innerHTML || '',
+      actions: actionsSource?.innerHTML || ''
+    });
+  });
 }
 
 function renderFeaturedBlogs(blogs = []) {
@@ -345,6 +456,7 @@ function setupReveal() {
 }
 
 (async function init() {
+  setupDetailPopups();
   setupNavHighlight();
   setupBackToTop();
   setupReveal();
