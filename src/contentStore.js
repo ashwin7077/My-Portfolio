@@ -85,6 +85,15 @@ const defaultContent = {
       category: 'Security',
       descriptionHtml: '<p>Practical methodology for finding and exploiting web vulnerabilities.</p>',
     }
+  ],
+  blogs: [
+    {
+      title: 'Pentester Nepal 12th Anniversary CTF Writeup',
+      date: '2025-01-15',
+      imageUrl: '',
+      excerpt: 'Challenge walkthroughs, forensics notes, and key exploitation patterns observed during the event.',
+      url: ''
+    }
   ]
 };
 
@@ -187,6 +196,15 @@ function sanitizeContent(content = {}) {
   const profile = content.profile || {};
   const skills = normalizeSkills(content.skills);
   const theme = normalizeTheme(content.theme);
+  const normalizedBlogs = Array.isArray(content.blogs)
+    ? sanitizeList(content.blogs).map((blog) => ({
+      title: String(blog.title || '').trim(),
+      date: String(blog.date || '').trim(),
+      imageUrl: String(blog.imageUrl || blog.coverUrl || '').trim(),
+      excerpt: String(blog.excerpt || '').trim(),
+      url: String(blog.url || '').trim()
+    })).filter((blog) => blog.title)
+    : null;
 
   return {
     projectCategories: normalizeCategories(content.projectCategories),
@@ -249,7 +267,8 @@ function sanitizeContent(content = {}) {
       author: String(book.author || '').trim(),
       category: String(book.category || '').trim(),
       descriptionHtml: String(book.descriptionHtml || '').trim(),
-    })).filter((book) => book.title)
+    })).filter((book) => book.title),
+    ...(normalizedBlogs ? { blogs: normalizedBlogs } : {})
   };
 }
 
@@ -272,7 +291,8 @@ function withDefaults(content) {
     certifications: sanitizeList(content.certifications).length ? content.certifications : defaultContent.certifications,
     experience: sanitizeList(content.experience).length ? content.experience : defaultContent.experience,
     projects: sanitizeList(content.projects).length ? content.projects : defaultContent.projects,
-    books: sanitizeList(content.books).length ? content.books : defaultContent.books
+    books: sanitizeList(content.books).length ? content.books : defaultContent.books,
+    blogs: sanitizeList(content.blogs).length ? content.blogs : defaultContent.blogs
   };
 }
 

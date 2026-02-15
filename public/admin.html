@@ -66,6 +66,7 @@
             <div class="cluster-links">
               <button class="cluster-link" data-target="admin-certifications" type="button">Certifications</button>
               <button class="cluster-link" data-target="admin-books" type="button">Books</button>
+              <button class="cluster-link" data-target="admin-blogs" type="button">Blogs</button>
             </div>
           </div>
           <div class="cluster">
@@ -76,19 +77,21 @@
             </div>
           </div>
         </nav>
+        <div class="admin-sidebar-actions">
+          <p id="status" class="status">Ready</p>
+          <button id="saveBtn" class="btn primary" type="button">Publish Site</button>
+          <button id="logoutBtn" class="btn ghost" type="button">Logout</button>
+        </div>
       </section>
 
-      <section class="card section admin-dashboard-head">
+      <section id="admin-dashboard" class="card section admin-dashboard-head admin-panel">
         <div class="section-head">
           <h2>Dashboard</h2>
-          <div class="section-tools">
-            <button id="logoutBtn" class="btn ghost" type="button">Logout</button>
-            <button id="saveBtn" class="btn primary" type="button">Publish Site</button>
-          </div>
         </div>
         <div class="admin-kpi-grid">
           <article class="admin-kpi"><p>Projects</p><strong id="kpiProjects">0</strong></article>
           <article class="admin-kpi"><p>Books</p><strong id="kpiBooks">0</strong></article>
+          <article class="admin-kpi"><p>Blogs</p><strong id="kpiBlogs">0</strong></article>
           <article class="admin-kpi"><p>Certifications</p><strong id="kpiCertifications">0</strong></article>
           <article class="admin-kpi"><p>Experience</p><strong id="kpiExperience">0</strong></article>
         </div>
@@ -96,20 +99,12 @@
           <button class="btn ghost dashboard-link" data-target="admin-projects" type="button">New Project</button>
           <button class="btn ghost dashboard-link" data-target="admin-books" type="button">Log Book</button>
           <button class="btn ghost dashboard-link" data-target="admin-certifications" type="button">Add Certification</button>
+          <button class="btn ghost dashboard-link" data-target="admin-blogs" type="button">New Blog</button>
         </div>
-        <p class="hint">Use the side navigation to jump quickly and publish when changes are ready.</p>
-        <p id="status" class="status"></p>
+        <p class="hint">Use the side navigation to switch sections. Publish and logout are always available in the sidebar.</p>
       </section>
 
-      <section id="admin-credibility" class="card section reveal in-view">
-        <div class="section-head">
-          <h2>Credibility Metrics</h2>
-          <button id="addCredibility" class="btn ghost" type="button">+ Add Metric</button>
-        </div>
-        <div id="credibilityContainer" class="stack"></div>
-      </section>
-
-      <section id="admin-theme" class="card section reveal in-view">
+      <section id="admin-theme" class="card section reveal in-view admin-panel">
         <div class="section-head">
           <h2>Theme</h2>
           <p class="hint">These colors update the public portfolio instantly after save.</p>
@@ -129,7 +124,7 @@
         </div>
       </section>
 
-      <section id="admin-profile" class="card section reveal in-view">
+      <section id="admin-profile" class="card section reveal in-view admin-panel">
         <h2>Profile</h2>
         <div class="grid two">
           <label class="field"><span>Logo Text</span><input id="logoText" type="text" placeholder="AP"></label>
@@ -164,7 +159,7 @@
         </div>
       </section>
 
-      <section id="admin-skills-tech" class="card section reveal in-view">
+      <section id="admin-skills-tech" class="card section reveal in-view admin-panel">
         <div class="section-head">
           <h2>Technical Skills</h2>
           <button id="addTechnicalSkill" class="btn ghost" type="button">+ Add Technical Skill</button>
@@ -172,7 +167,7 @@
         <div id="technicalSkillsContainer" class="stack"></div>
       </section>
 
-      <section id="admin-skills-soft" class="card section reveal in-view">
+      <section id="admin-skills-soft" class="card section reveal in-view admin-panel">
         <div class="section-head">
           <h2>Soft Skills</h2>
           <button id="addSoftSkill" class="btn ghost" type="button">+ Add Soft Skill</button>
@@ -180,7 +175,7 @@
         <div id="softSkillsContainer" class="stack"></div>
       </section>
 
-      <section id="admin-experience" class="card section reveal in-view">
+      <section id="admin-experience" class="card section reveal in-view admin-panel">
         <div class="section-head">
           <h2>Experience</h2>
           <button id="addExperience" class="btn ghost" type="button">+ Add Experience</button>
@@ -188,7 +183,25 @@
         <div id="experienceContainer" class="stack"></div>
       </section>
 
-      <section id="admin-certifications" class="card section reveal in-view">
+      <section id="admin-projects" class="card section reveal in-view admin-panel">
+        <div class="section-head">
+          <h2>Projects</h2>
+          <div class="section-tools">
+            <input id="searchProjects" type="text" placeholder="Search projects...">
+            <button id="expandProjects" class="btn ghost" type="button">Expand All</button>
+            <button id="collapseProjects" class="btn ghost" type="button">Collapse All</button>
+            <button id="addProject" class="btn ghost" type="button">+ Add Project</button>
+          </div>
+        </div>
+        <div class="subsection-head">
+          <h3>Project Categories (Create, Edit, Reorder)</h3>
+          <button id="addProjectCategory" class="btn ghost" type="button">+ Add Category</button>
+        </div>
+        <div id="projectCategoriesContainer" class="stack"></div>
+        <div id="projectsContainer" class="stack"></div>
+      </section>
+
+      <section id="admin-certifications" class="card section reveal in-view admin-panel">
         <div class="section-head">
           <h2>Certifications</h2>
           <div class="section-tools">
@@ -201,7 +214,7 @@
         <div id="certificationsContainer" class="stack"></div>
       </section>
 
-      <section id="admin-books" class="card section reveal in-view">
+      <section id="admin-books" class="card section reveal in-view admin-panel">
         <div class="section-head">
           <h2>Read Books</h2>
           <div class="section-tools">
@@ -219,30 +232,33 @@
         <div id="booksContainer" class="stack"></div>
       </section>
 
-      <section id="admin-socials" class="card section reveal in-view">
+      <section id="admin-blogs" class="card section reveal in-view admin-panel">
+        <div class="section-head">
+          <h2>Blogs</h2>
+          <div class="section-tools">
+            <input id="searchBlogsPosts" type="text" placeholder="Search blogs...">
+            <button id="expandBlogs" class="btn ghost" type="button">Expand All</button>
+            <button id="collapseBlogs" class="btn ghost" type="button">Collapse All</button>
+            <button id="addBlog" class="btn ghost" type="button">+ Add Blog</button>
+          </div>
+        </div>
+        <div id="blogsContainer" class="stack"></div>
+      </section>
+
+      <section id="admin-credibility" class="card section reveal in-view admin-panel">
+        <div class="section-head">
+          <h2>Credibility Metrics</h2>
+          <button id="addCredibility" class="btn ghost" type="button">+ Add Metric</button>
+        </div>
+        <div id="credibilityContainer" class="stack"></div>
+      </section>
+
+      <section id="admin-socials" class="card section reveal in-view admin-panel">
         <div class="section-head">
           <h2>Social Links</h2>
           <button id="addSocial" class="btn ghost" type="button">+ Add Link</button>
         </div>
         <div id="socialsContainer" class="stack"></div>
-      </section>
-
-      <section id="admin-projects" class="card section reveal in-view">
-        <div class="section-head">
-          <h2>Projects</h2>
-          <div class="section-tools">
-            <input id="searchProjects" type="text" placeholder="Search projects...">
-            <button id="expandProjects" class="btn ghost" type="button">Expand All</button>
-            <button id="collapseProjects" class="btn ghost" type="button">Collapse All</button>
-            <button id="addProject" class="btn ghost" type="button">+ Add Project</button>
-          </div>
-        </div>
-        <div class="subsection-head">
-          <h3>Project Categories (Create, Edit, Reorder)</h3>
-          <button id="addProjectCategory" class="btn ghost" type="button">+ Add Category</button>
-        </div>
-        <div id="projectCategoriesContainer" class="stack"></div>
-        <div id="projectsContainer" class="stack"></div>
       </section>
     </div>
 
@@ -252,6 +268,7 @@
       <button id="reloginBtn" class="btn primary" type="button">Back To Login</button>
     </section>
   </main>
+  <div id="toastStack" class="toast-stack" aria-live="polite" aria-atomic="true"></div>
 
   <script src="/js/admin.js"></script>
 </body>

@@ -49,24 +49,34 @@
   bookCategoriesContainer: document.getElementById('bookCategoriesContainer'),
   projectCategoriesContainer: document.getElementById('projectCategoriesContainer'),
   booksContainer: document.getElementById('booksContainer'),
+  blogsContainer: document.getElementById('blogsContainer'),
   projectsContainer: document.getElementById('projectsContainer'),
   searchCertifications: document.getElementById('searchCertifications'),
   searchBooks: document.getElementById('searchBooks'),
+  searchBlogsPosts: document.getElementById('searchBlogsPosts'),
   searchProjects: document.getElementById('searchProjects'),
   expandCertifications: document.getElementById('expandCertifications'),
   collapseCertifications: document.getElementById('collapseCertifications'),
   expandBooks: document.getElementById('expandBooks'),
   collapseBooks: document.getElementById('collapseBooks'),
+  expandBlogs: document.getElementById('expandBlogs'),
+  collapseBlogs: document.getElementById('collapseBlogs'),
   expandProjects: document.getElementById('expandProjects'),
   collapseProjects: document.getElementById('collapseProjects'),
   addBookCategory: document.getElementById('addBookCategory'),
   addProjectCategory: document.getElementById('addProjectCategory'),
   kpiProjects: document.getElementById('kpiProjects'),
   kpiBooks: document.getElementById('kpiBooks'),
+  kpiBlogs: document.getElementById('kpiBlogs'),
   kpiCertifications: document.getElementById('kpiCertifications'),
   kpiExperience: document.getElementById('kpiExperience'),
-  status: document.getElementById('status')
+  saveBtn: document.getElementById('saveBtn'),
+  status: document.getElementById('status'),
+  toastStack: document.getElementById('toastStack')
 };
+
+let isEditorDirty = false;
+let isSaveInFlight = false;
 
 function escapeHtml(value = '') {
   return String(value)
@@ -85,6 +95,42 @@ function setView(mode) {
 
 function setLoginStatus(message = '') {
   refs.loginStatus.textContent = message;
+}
+
+function showToast(message, tone = 'info') {
+  if (!refs.toastStack || !message) return;
+  const toast = document.createElement('div');
+  toast.className = `toast ${tone}`;
+  toast.textContent = message;
+  refs.toastStack.appendChild(toast);
+  window.setTimeout(() => toast.remove(), 2600);
+}
+
+function setEditorStatus(message = '', tone = 'info', withToast = false) {
+  if (refs.status) {
+    refs.status.textContent = message;
+    refs.status.dataset.tone = tone;
+  }
+  if (withToast && message) {
+    showToast(message, tone);
+  }
+}
+
+function setSaveButtonState() {
+  if (!refs.saveBtn) return;
+  refs.saveBtn.disabled = isSaveInFlight;
+  refs.saveBtn.textContent = isSaveInFlight
+    ? 'Publishing...'
+    : (isEditorDirty ? 'Publish Site *' : 'Publish Site');
+  refs.saveBtn.classList.toggle('is-dirty', isEditorDirty && !isSaveInFlight);
+}
+
+function markEditorDirty(value = true) {
+  if (value && !isEditorDirty) {
+    setEditorStatus('You have unsaved changes.', 'info');
+  }
+  isEditorDirty = value;
+  setSaveButtonState();
 }
 
 async function requestJson(url, options = {}) {
@@ -146,12 +192,26 @@ function normalizeBlocks(blocks, fallbackText = '') {
     .map((text) => ({ type: 'paragraph', text }));
 }
 
-function managedEditor(title = 'Item', badge = '') {
+function normalizeImageUrl(value = '') {
+  const url = String(value || '').trim();
+  if (!url) return '';
+  if (/^(https?:)?\/\//i.test(url) || url.startsWith('/')) return url;
+  return '';
+}
+
+function managedEditor(title = 'Item', badge = '', imageUrl = '') {
   const wrapper = document.createElement('details');
   wrapper.className = 'project-editor managed-item';
+  wrapper.draggable = true;
   wrapper.innerHTML = `
     <summary class="editor-summary">
-      <span class="editor-summary-title">${escapeHtml(title)}</span>
+      <span class="editor-summary-main">
+        <img class="editor-summary-thumb" alt="" src="${escapeHtml(normalizeImageUrl(imageUrl) || '/profile.png')}">
+        <span class="editor-summary-text">
+          <span class="editor-summary-title">${escapeHtml(title)}</span>
+          <span class="editor-summary-hint">Drag to reorder</span>
+        </span>
+      </span>
       <span class="editor-summary-badge">${escapeHtml(badge || 'Item')}</span>
     </summary>
     <div class="editor-body"></div>
@@ -159,11 +219,15 @@ function managedEditor(title = 'Item', badge = '') {
   return wrapper;
 }
 
-function setManagedSummary(wrapper, title, badge) {
+function setManagedSummary(wrapper, title, badge, imageUrl = '') {
   const titleNode = wrapper.querySelector('.editor-summary-title');
   const badgeNode = wrapper.querySelector('.editor-summary-badge');
+  const thumbNode = wrapper.querySelector('.editor-summary-thumb');
   if (titleNode) titleNode.textContent = title || 'Untitled';
   if (badgeNode) badgeNode.textContent = badge || 'Item';
+  if (thumbNode) {
+    thumbNode.src = normalizeImageUrl(imageUrl) || '/profile.png';
+  }
 }
 
 function createBlockItem(block = {}, type = 'paragraph') {
@@ -267,16 +331,16 @@ function mountBlockEditor(host, initialBlocks = [], uploadType = 'project') {
       const urlInput = item.querySelector('.block-image-url');
       const file = fileInput?.files?.[0];
       if (!file) {
-        refs.status.textContent = 'Choose an image file first.';
+        setEditorStatus('Choose an image file first.', 'error', true);
         return;
       }
-      refs.status.textContent = 'Uploading block image...';
+      setEditorStatus('Uploading block image...', 'info');
       try {
         const url = await uploadImage(file, uploadType);
         urlInput.value = url;
-        refs.status.textContent = 'Block image uploaded.';
+        setEditorStatus('Block image uploaded.', 'success', true);
       } catch (error) {
-        refs.status.textContent = error.message;
+        setEditorStatus(error.message, 'error', true);
       }
     }
   });
@@ -300,32 +364,60 @@ function toggleAllManaged(container, open) {
   });
 }
 
+function setupManagedReorder(container) {
+  if (!container) return;
+  let dragging = null;
+
+  container.addEventListener('dragstart', (event) => {
+    const card = event.target.closest('.managed-item');
+    if (!card) return;
+    dragging = card;
+    card.classList.add('dragging');
+    event.dataTransfer.effectAllowed = 'move';
+  });
+
+  container.addEventListener('dragend', () => {
+    if (dragging) dragging.classList.remove('dragging');
+    dragging = null;
+  });
+
+  container.addEventListener('dragover', (event) => {
+    if (!dragging) return;
+    event.preventDefault();
+    const after = [...container.querySelectorAll('.managed-item:not(.dragging)')]
+      .find((node) => event.clientY < node.getBoundingClientRect().top + (node.offsetHeight / 2));
+    if (!after) {
+      container.appendChild(dragging);
+      return;
+    }
+    container.insertBefore(dragging, after);
+  });
+}
+
 function setupClusterNavigation() {
-  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const links = [...document.querySelectorAll('.cluster-link')];
   const sections = links
     .map((link) => document.getElementById(link.dataset.target))
     .filter(Boolean);
+  const dashboard = document.getElementById('admin-dashboard');
+  const allPanels = [dashboard, ...sections].filter(Boolean);
+  const panelById = new Map(allPanels.map((panel) => [panel.id, panel]));
+  const firstTarget = links[0]?.dataset.target || 'admin-dashboard';
+
+  const activate = (id) => {
+    allPanels.forEach((panel) => panel.classList.toggle('hidden', panel.id !== id));
+    links.forEach((link) => link.classList.toggle('active', link.dataset.target === id));
+  };
 
   links.forEach((link) => {
     link.addEventListener('click', () => {
-      const section = document.getElementById(link.dataset.target);
-      if (!section) return;
-      section.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+      if (!panelById.has(link.dataset.target)) return;
+      activate(link.dataset.target);
     });
   });
 
-  const map = new Map(links.map((link) => [link.dataset.target, link]));
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach((entry) => {
-      if (!entry.isIntersecting) return;
-      links.forEach((link) => link.classList.remove('active'));
-      const active = map.get(entry.target.id);
-      if (active) active.classList.add('active');
-    });
-  }, { rootMargin: '-35% 0px -55% 0px', threshold: 0.01 });
-
-  sections.forEach((section) => observer.observe(section));
+  activate(firstTarget);
+  return activate;
 }
 
 function categoryRow(value = '', valueClass = 'book-category-value') {
@@ -440,6 +532,7 @@ function getRichEditorValue(host) {
 function updateDashboardStats(payload) {
   if (refs.kpiProjects) refs.kpiProjects.textContent = String(payload.projects.length);
   if (refs.kpiBooks) refs.kpiBooks.textContent = String(payload.books.length);
+  if (refs.kpiBlogs) refs.kpiBlogs.textContent = String((payload.blogs || []).length);
   if (refs.kpiCertifications) refs.kpiCertifications.textContent = String(payload.certifications.length);
   if (refs.kpiExperience) refs.kpiExperience.textContent = String(payload.experience.length);
 }
@@ -525,9 +618,9 @@ function experienceCard(experience = {}) {
 }
 
 function certificationCard(certification = {}) {
-  const wrapper = managedEditor(certification.title || 'Certification', certification.category || 'cert');
-  const body = wrapper.querySelector('.editor-body');
   const certImage = certification.imageUrl || (Array.isArray(certification.imageUrls) ? certification.imageUrls[0] : '');
+  const wrapper = managedEditor(certification.title || 'Certification', certification.category || 'cert', certImage || '');
+  const body = wrapper.querySelector('.editor-body');
   body.innerHTML = `
     <div class="grid">
       <label class="field"><span>Certification Title</span><input class="c-title" type="text" value="${escapeHtml(certification.title || '')}"></label>
@@ -557,16 +650,22 @@ function certificationCard(certification = {}) {
     const urlInput = body.querySelector('.c-image');
     const file = fileInput?.files?.[0];
     if (!file) {
-      refs.status.textContent = 'Choose a certificate image first.';
+      setEditorStatus('Choose a certificate image first.', 'error', true);
       return;
     }
-    refs.status.textContent = 'Uploading certificate image...';
+    setEditorStatus('Uploading certificate image...', 'info');
     try {
       const url = await uploadImage(file, 'certification');
       urlInput.value = url;
-      refs.status.textContent = 'Certificate image uploaded.';
+      setManagedSummary(
+        wrapper,
+        titleInput.value.trim() || 'Certification',
+        categoryInput.value.trim() || 'cert',
+        url
+      );
+      setEditorStatus('Certificate image uploaded.', 'success', true);
     } catch (error) {
-      refs.status.textContent = error.message;
+      setEditorStatus(error.message, 'error', true);
     }
   });
 
@@ -579,15 +678,22 @@ function certificationCard(certification = {}) {
   body.appendChild(remove);
   const titleInput = body.querySelector('.c-title');
   const categoryInput = body.querySelector('.c-category');
-  const refreshSummary = () => setManagedSummary(wrapper, titleInput.value.trim() || 'Certification', categoryInput.value.trim() || 'cert');
+  const imageInput = body.querySelector('.c-image');
+  const refreshSummary = () => setManagedSummary(
+    wrapper,
+    titleInput.value.trim() || 'Certification',
+    categoryInput.value.trim() || 'cert',
+    imageInput.value.trim()
+  );
   titleInput.addEventListener('input', refreshSummary);
   categoryInput.addEventListener('input', refreshSummary);
+  imageInput.addEventListener('input', refreshSummary);
   wrapper.open = false;
   return wrapper;
 }
 
 function projectCard(project = {}) {
-  const wrapper = managedEditor(project.title || 'Project', project.category || 'project');
+  const wrapper = managedEditor(project.title || 'Project', project.category || 'project', project.imageUrl || '');
   const categories = getProjectCategories();
   const body = wrapper.querySelector('.editor-body');
   body.innerHTML = `
@@ -622,16 +728,22 @@ function projectCard(project = {}) {
     const urlInput = body.querySelector('.p-image');
     const file = fileInput?.files?.[0];
     if (!file) {
-      refs.status.textContent = 'Choose a project image first.';
+      setEditorStatus('Choose a project image first.', 'error', true);
       return;
     }
-    refs.status.textContent = 'Uploading project image...';
+    setEditorStatus('Uploading project image...', 'info');
     try {
       const url = await uploadImage(file, 'project');
       urlInput.value = url;
-      refs.status.textContent = 'Project image uploaded.';
+      setManagedSummary(
+        wrapper,
+        titleInput.value.trim() || 'Project',
+        categoryInput.value.trim() || 'project',
+        url
+      );
+      setEditorStatus('Project image uploaded.', 'success', true);
     } catch (error) {
-      refs.status.textContent = error.message;
+      setEditorStatus(error.message, 'error', true);
     }
   });
 
@@ -644,18 +756,25 @@ function projectCard(project = {}) {
   body.appendChild(remove);
   const titleInput = body.querySelector('.p-title');
   const categoryInput = body.querySelector('.p-category');
-  const refreshSummary = () => setManagedSummary(wrapper, titleInput.value.trim() || 'Project', categoryInput.value.trim() || 'project');
+  const imageInput = body.querySelector('.p-image');
+  const refreshSummary = () => setManagedSummary(
+    wrapper,
+    titleInput.value.trim() || 'Project',
+    categoryInput.value.trim() || 'project',
+    imageInput.value.trim()
+  );
   titleInput.addEventListener('input', refreshSummary);
   categoryInput.addEventListener('input', refreshSummary);
+  imageInput.addEventListener('input', refreshSummary);
   wrapper.open = false;
   return wrapper;
 }
 
 function bookCard(book = {}) {
-  const wrapper = managedEditor(book.title || 'Book', book.category || 'book');
   const categories = getBookCategories();
-  const body = wrapper.querySelector('.editor-body');
   const bookImage = book.imageUrl || book.profileImageUrl || book.coverUrl || '';
+  const wrapper = managedEditor(book.title || 'Book', book.category || 'book', bookImage);
+  const body = wrapper.querySelector('.editor-body');
   body.innerHTML = `
     <div class="grid">
       <label class="field full"><span>Image Link</span><input class="b-image" type="text" value="${escapeHtml(bookImage)}" placeholder="https://.../book.jpg"></label>
@@ -687,25 +806,95 @@ function bookCard(book = {}) {
     const urlInput = body.querySelector('.b-image');
     const file = fileInput?.files?.[0];
     if (!file) {
-      refs.status.textContent = 'Choose a book image first.';
+      setEditorStatus('Choose a book image first.', 'error', true);
       return;
     }
-    refs.status.textContent = 'Uploading book image...';
+    setEditorStatus('Uploading book image...', 'info');
     try {
       const url = await uploadImage(file, 'book');
       urlInput.value = url;
-      refs.status.textContent = 'Book image uploaded.';
+      setManagedSummary(
+        wrapper,
+        titleInput.value.trim() || 'Book',
+        categoryInput.value.trim() || 'book',
+        url
+      );
+      setEditorStatus('Book image uploaded.', 'success', true);
     } catch (error) {
-      refs.status.textContent = error.message;
+      setEditorStatus(error.message, 'error', true);
     }
   });
 
   body.appendChild(remove);
   const titleInput = body.querySelector('.b-title');
   const categoryInput = body.querySelector('.b-category');
-  const refreshSummary = () => setManagedSummary(wrapper, titleInput.value.trim() || 'Book', categoryInput.value.trim() || 'book');
+  const imageInput = body.querySelector('.b-image');
+  const refreshSummary = () => setManagedSummary(
+    wrapper,
+    titleInput.value.trim() || 'Book',
+    categoryInput.value.trim() || 'book',
+    imageInput.value.trim()
+  );
   titleInput.addEventListener('input', refreshSummary);
   categoryInput.addEventListener('input', refreshSummary);
+  imageInput.addEventListener('input', refreshSummary);
+  wrapper.open = false;
+  return wrapper;
+}
+
+function blogCard(blog = {}) {
+  const wrapper = managedEditor(blog.title || 'Blog', 'blog', blog.imageUrl || '');
+  const body = wrapper.querySelector('.editor-body');
+  body.innerHTML = `
+    <div class="grid">
+      <label class="field full"><span>Image URL</span><input class="blog-image" type="text" value="${escapeHtml(blog.imageUrl || '')}" placeholder="https://.../blog.jpg"></label>
+      <label class="field"><span>Blog Title</span><input class="blog-title" type="text" value="${escapeHtml(blog.title || '')}"></label>
+      <label class="field"><span>Date</span><input class="blog-date" type="date" value="${escapeHtml(blog.date || '')}"></label>
+      <label class="field full"><span>Excerpt</span><textarea class="blog-excerpt" rows="3" placeholder="Short preview shown on cards">${escapeHtml(blog.excerpt || '')}</textarea></label>
+      <label class="field full"><span>External URL (optional)</span><input class="blog-url" type="text" value="${escapeHtml(blog.url || '')}" placeholder="https://..."></label>
+      <div class="field upload-box">
+        <span>Upload Blog Image (or use URL above)</span>
+        <div class="upload-row">
+          <input class="blog-image-file" type="file" accept="image/*">
+          <button class="btn ghost blog-upload-image" type="button">Upload Blog Image</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  body.addEventListener('click', async (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement) || !target.classList.contains('blog-upload-image')) return;
+    const fileInput = body.querySelector('.blog-image-file');
+    const urlInput = body.querySelector('.blog-image');
+    const file = fileInput?.files?.[0];
+    if (!file) {
+      setEditorStatus('Choose a blog image first.', 'error', true);
+      return;
+    }
+    setEditorStatus('Uploading blog image...', 'info');
+    try {
+      const url = await uploadImage(file, 'blog');
+      urlInput.value = url;
+      setManagedSummary(wrapper, titleInput.value.trim() || 'Blog', 'blog', url);
+      setEditorStatus('Blog image uploaded.', 'success', true);
+    } catch (error) {
+      setEditorStatus(error.message, 'error', true);
+    }
+  });
+
+  const remove = document.createElement('button');
+  remove.className = 'btn ghost';
+  remove.type = 'button';
+  remove.textContent = 'Remove Blog';
+  remove.addEventListener('click', () => wrapper.remove());
+  body.appendChild(remove);
+
+  const titleInput = body.querySelector('.blog-title');
+  const imageInput = body.querySelector('.blog-image');
+  const refreshSummary = () => setManagedSummary(wrapper, titleInput.value.trim() || 'Blog', 'blog', imageInput.value.trim());
+  titleInput.addEventListener('input', refreshSummary);
+  imageInput.addEventListener('input', refreshSummary);
   wrapper.open = false;
   return wrapper;
 }
@@ -773,7 +962,7 @@ function applyThemePreview(theme) {
 }
 
 function fillForm(content) {
-  const { profile, socials, projects, certifications = [], experience = [], credibility = [], books = [], bookCategories = [], projectCategories = [] } = content;
+  const { profile, socials, projects, certifications = [], experience = [], credibility = [], books = [], blogs = [], bookCategories = [], projectCategories = [] } = content;
   const skills = normalizeSkills(content.skills);
   const theme = {
     bg: normalizeHexColor(content.theme?.bg, '#080b14'),
@@ -829,6 +1018,9 @@ function fillForm(content) {
 
   refs.booksContainer.innerHTML = '';
   (books || []).forEach((book) => refs.booksContainer.appendChild(bookCard(book)));
+
+  refs.blogsContainer.innerHTML = '';
+  (blogs || []).forEach((blog) => refs.blogsContainer.appendChild(blogCard(blog)));
 
   refs.bookCategoriesContainer.innerHTML = '';
   const categories = Array.isArray(bookCategories) && bookCategories.length
@@ -922,6 +1114,18 @@ function getProjects() {
     .filter((p) => p.title);
 }
 
+function getBlogs() {
+  return [...refs.blogsContainer.querySelectorAll('.project-editor')]
+    .map((row) => ({
+      title: row.querySelector('.blog-title')?.value.trim() || '',
+      date: row.querySelector('.blog-date')?.value.trim() || '',
+      imageUrl: row.querySelector('.blog-image')?.value.trim() || '',
+      excerpt: row.querySelector('.blog-excerpt')?.value.trim() || '',
+      url: row.querySelector('.blog-url')?.value.trim() || ''
+    }))
+    .filter((blog) => blog.title);
+}
+
 function buildPayload() {
   return {
     credibility: getCredibility(),
@@ -960,14 +1164,18 @@ function buildPayload() {
     experience: getExperience(),
     certifications: getCertifications(),
     books: getBooks(),
+    blogs: getBlogs(),
     projects: getProjects()
   };
 }
 
 async function saveContent() {
+  if (isSaveInFlight) return;
+  isSaveInFlight = true;
+  setSaveButtonState();
   const payload = buildPayload();
   updateDashboardStats(payload);
-  refs.status.textContent = 'Saving...';
+  setEditorStatus('Publishing changes...', 'info');
 
   try {
     const { response, data } = await requestJson('/api/admin/content', {
@@ -984,9 +1192,13 @@ async function saveContent() {
       throw new Error(data.message || 'Save failed');
     }
 
-    refs.status.textContent = 'Saved successfully.';
+    markEditorDirty(false);
+    setEditorStatus('Changes published successfully.', 'success', true);
   } catch (error) {
-    refs.status.textContent = error.message;
+    setEditorStatus(error.message, 'error', true);
+  } finally {
+    isSaveInFlight = false;
+    setSaveButtonState();
   }
 }
 
@@ -1015,17 +1227,17 @@ async function uploadImage(file, type) {
 async function handleUpload(fileInput, targetInput, type) {
   const file = fileInput.files?.[0];
   if (!file) {
-    refs.status.textContent = 'Choose an image first.';
+    setEditorStatus('Choose an image first.', 'error', true);
     return;
   }
 
-  refs.status.textContent = 'Uploading image...';
+  setEditorStatus('Uploading image...', 'info');
   try {
     const url = await uploadImage(file, type);
     targetInput.value = url;
-    refs.status.textContent = 'Image uploaded successfully.';
+    setEditorStatus('Image uploaded successfully.', 'success', true);
   } catch (error) {
-    refs.status.textContent = error.message;
+    setEditorStatus(error.message, 'error', true);
   }
 }
 
@@ -1046,18 +1258,25 @@ async function login() {
     }
 
     setLoginStatus('Login successful. Loading editor...');
+    showToast('Login successful.', 'success');
     await loadEditor();
     refs.adminPassword.value = '';
   } catch (error) {
     setLoginStatus(error.message);
+    showToast(error.message, 'error');
   }
 }
 
 async function logout() {
+  if (isEditorDirty && !window.confirm('You have unsaved changes. Logout anyway?')) {
+    return;
+  }
   await requestJson('/api/admin/logout', { method: 'POST' });
   setView('login');
-  refs.status.textContent = '';
+  markEditorDirty(false);
+  setEditorStatus('', 'info');
   setLoginStatus('Logged out.');
+  showToast('Logged out.', 'info');
 }
 
 async function loadEditor() {
@@ -1065,7 +1284,8 @@ async function loadEditor() {
     const content = await fetchContent();
     fillForm(content);
     setView('editor');
-    refs.status.textContent = '';
+    markEditorDirty(false);
+    setEditorStatus('Ready', 'info');
     setLoginStatus('');
   } catch (error) {
     if (error?.status === 401) {
@@ -1075,6 +1295,7 @@ async function loadEditor() {
 
     setView('login');
     setLoginStatus(error?.message || 'Failed to load admin content.');
+    showToast(error?.message || 'Failed to load admin content.', 'error');
   }
 }
 
@@ -1102,18 +1323,28 @@ document.getElementById('addCertification').addEventListener('click', () => {
   const item = certificationCard({});
   item.open = true;
   refs.certificationsContainer.appendChild(item);
+  showToast('Certification added.', 'success');
 });
 
 document.getElementById('addBook').addEventListener('click', () => {
   const item = bookCard({});
   item.open = true;
   refs.booksContainer.appendChild(item);
+  showToast('Book added.', 'success');
+});
+
+document.getElementById('addBlog').addEventListener('click', () => {
+  const item = blogCard({});
+  item.open = true;
+  refs.blogsContainer.appendChild(item);
+  showToast('Blog added.', 'success');
 });
 
 document.getElementById('addProject').addEventListener('click', () => {
   const item = projectCard({});
   item.open = true;
   refs.projectsContainer.appendChild(item);
+  showToast('Project added.', 'success');
 });
 
 document.getElementById('saveBtn').addEventListener('click', saveContent);
@@ -1177,14 +1408,17 @@ refs.uploadLogoBtn.addEventListener('click', () => {
 refs.addBookCategory.addEventListener('click', () => {
   refs.bookCategoriesContainer.appendChild(categoryRow('', 'book-category-value'));
   refreshCategorySelects();
+  showToast('Book category added.', 'info');
 });
 
 refs.addProjectCategory.addEventListener('click', () => {
   refs.projectCategoriesContainer.appendChild(categoryRow('', 'project-category-value'));
   refreshCategorySelects();
+  showToast('Project category added.', 'info');
 });
 
 refs.editorSection.addEventListener('input', () => {
+  markEditorDirty(true);
   updateDashboardStats(buildPayload());
   refreshCategorySelects();
 });
@@ -1193,18 +1427,40 @@ refs.expandCertifications.addEventListener('click', () => toggleAllManaged(refs.
 refs.collapseCertifications.addEventListener('click', () => toggleAllManaged(refs.certificationsContainer, false));
 refs.expandBooks.addEventListener('click', () => toggleAllManaged(refs.booksContainer, true));
 refs.collapseBooks.addEventListener('click', () => toggleAllManaged(refs.booksContainer, false));
+refs.expandBlogs.addEventListener('click', () => toggleAllManaged(refs.blogsContainer, true));
+refs.collapseBlogs.addEventListener('click', () => toggleAllManaged(refs.blogsContainer, false));
 refs.expandProjects.addEventListener('click', () => toggleAllManaged(refs.projectsContainer, true));
 refs.collapseProjects.addEventListener('click', () => toggleAllManaged(refs.projectsContainer, false));
 
 setupSearchFilter(refs.searchCertifications, refs.certificationsContainer);
 setupSearchFilter(refs.searchBooks, refs.booksContainer);
+setupSearchFilter(refs.searchBlogsPosts, refs.blogsContainer);
 setupSearchFilter(refs.searchProjects, refs.projectsContainer);
-setupClusterNavigation();
+setupManagedReorder(refs.certificationsContainer);
+setupManagedReorder(refs.booksContainer);
+setupManagedReorder(refs.blogsContainer);
+setupManagedReorder(refs.projectsContainer);
+const activateEditorPanel = setupClusterNavigation();
 document.querySelectorAll('.dashboard-link').forEach((button) => {
   button.addEventListener('click', () => {
-    const section = document.getElementById(button.dataset.target);
-    if (section) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (typeof activateEditorPanel === 'function') {
+      activateEditorPanel(button.dataset.target);
+    }
   });
+});
+
+window.addEventListener('beforeunload', (event) => {
+  if (!isEditorDirty) return;
+  event.preventDefault();
+  event.returnValue = '';
+});
+
+window.addEventListener('keydown', (event) => {
+  const isSaveShortcut = (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's';
+  if (!isSaveShortcut) return;
+  if (refs.editorSection.classList.contains('hidden')) return;
+  event.preventDefault();
+  saveContent();
 });
 
 (async function init() {

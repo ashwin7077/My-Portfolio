@@ -26,10 +26,10 @@ function setBrand(profile = {}) {
   }
 }
 
-function bookTemplate(book = {}) {
+function bookTemplate(book = {}, index = 0) {
   const image = book.imageUrl || book.profileImageUrl || book.coverUrl || '';
   return `
-    <article class="cert-card">
+    <article class="cert-card motion-rise" style="--delay:${Math.min(index, 8) * 65}ms">
       ${image ? `<img class="card-image" src="${image}" alt="${book.title || 'Book'} image" loading="lazy">` : ''}
       <div class="cert-head">
         <h3>${book.title || 'Book'}</h3>
@@ -49,6 +49,6 @@ function bookTemplate(book = {}) {
   setBrand(data.content.profile || {});
   const books = Array.isArray(data.content.books) ? data.content.books : [];
   const grid = document.getElementById('booksGrid');
-  grid.innerHTML = books.length ? books.map((b) => bookTemplate(b)).join('') : '<article class="cert-card"><h3>No books yet</h3></article>';
+  grid.innerHTML = books.length ? books.map((b, index) => bookTemplate(b, index)).join('') : '<article class="cert-card"><h3>No books yet</h3></article>';
 })();
 

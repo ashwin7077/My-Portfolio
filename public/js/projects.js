@@ -26,10 +26,10 @@ function setBrand(profile = {}) {
   }
 }
 
-function projectTemplate(project = {}) {
+function projectTemplate(project = {}, index = 0) {
   const image = project.imageUrl || project.coverUrl || '';
   return `
-    <article class="project-card">
+    <article class="project-card motion-rise" style="--delay:${Math.min(index, 8) * 70}ms">
       ${image ? `<img class="card-image" src="${image}" alt="${project.title || 'Project'} image" loading="lazy">` : ''}
       <div class="cert-head">
         <h3>${project.title || 'Untitled Project'}</h3>
@@ -54,6 +54,6 @@ function projectTemplate(project = {}) {
   setBrand(data.content.profile || {});
   const projects = Array.isArray(data.content.projects) ? data.content.projects : [];
   const grid = document.getElementById('projectsGrid');
-  grid.innerHTML = projects.length ? projects.map((p) => projectTemplate(p)).join('') : '<article class="project-card"><h3>No projects yet</h3></article>';
+  grid.innerHTML = projects.length ? projects.map((p, index) => projectTemplate(p, index)).join('') : '<article class="project-card"><h3>No projects yet</h3></article>';
 })();
 

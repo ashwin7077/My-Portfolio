@@ -1,11 +1,27 @@
-﻿const sectionIds = ['about', 'projects', 'certifications', 'books', 'contact'];
+const sectionIds = ['about', 'projects', 'certifications', 'books', 'blogs', 'contact'];
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const state = {
   projects: [],
   books: [],
-  certifications: []
+  certifications: [],
+  blogs: []
 };
+
+function slugify(value = '') {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80);
+}
+
+function normalizeCertificationCategory(value = '') {
+  const source = String(value || '').toLowerCase();
+  if (source.includes('participation')) return 'participations';
+  if (source.includes('soft')) return 'softskill';
+  return 'technical-skill';
+}
 
 function setText(id, value = '') {
   const node = document.getElementById(id);
@@ -117,10 +133,10 @@ function renderCredibility(credibility = [], projects = []) {
   });
 }
 
-function projectTemplate(project = {}) {
+function projectTemplate(project = {}, index = 0) {
   const image = project.imageUrl || project.coverUrl || '';
   return `
-    <article class="project-card">
+    <article class="project-card motion-rise" style="--delay:${Math.min(index, 7) * 70}ms">
       ${image ? `<img class="card-image" src="${image}" alt="${project.title || 'Project'} image" loading="lazy">` : ''}
       <div class="cert-head">
         <h3>${project.title || 'Untitled Project'}</h3>
@@ -147,21 +163,26 @@ function renderProjects(projects = []) {
     return;
   }
 
-  grid.innerHTML = items.map((project) => projectTemplate(project)).join('');
+  grid.innerHTML = items.map((project, index) => projectTemplate(project, index)).join('');
 }
 
-function certificationTemplate(item = {}) {
+function certificationTemplate(item = {}, index = 0) {
   const certImage = item.imageUrl || (Array.isArray(item.imageUrls) ? item.imageUrls[0] : '');
+  const categorySlug = normalizeCertificationCategory(item.category || '');
+  const certSlug = slugify(item.title || `certification-${index + 1}`) || `certification-${index + 1}`;
+  const detailLink = `/certifications/${categorySlug}/${certSlug}`;
   return `
-    <article class="cert-card">
-      ${certImage ? `<img class="card-image" src="${certImage}" alt="${item.title || 'Certification'} image" loading="lazy">` : ''}
-      <div class="cert-head">
-        <h3>${item.title || 'Certification'}</h3>
-        <span>${item.category || 'General'}</span>
-      </div>
-      <p>${item.issuer || ''}${item.date ? ` • ${item.date}` : ''}</p>
-      ${item.credentialUrl ? `<a class="btn ghost" href="${item.credentialUrl}" target="_blank" rel="noreferrer">View Credential</a>` : ''}
-    </article>
+    <a class="cert-card-link motion-rise" style="--delay:${Math.min(index, 5) * 80}ms" href="${detailLink}">
+      <article class="cert-card cert-card-featured">
+        <div class="cert-media">
+          ${certImage ? `<img class="cert-img" src="${certImage}" alt="${item.title || 'Certification'} image" loading="lazy">` : '<div class="cert-img cert-img-empty">No Image</div>'}
+        </div>
+        <div class="cert-meta">
+          <h3 class="cert-title">${item.title || 'Certification'}</h3>
+          <p class="cert-year">${item.date || 'Date not set'}</p>
+        </div>
+      </article>
+    </a>
   `;
 }
 
@@ -169,19 +190,20 @@ function renderCertifications(certifications = []) {
   const grid = document.getElementById('certificationsGrid');
   if (!grid) return;
 
-  const items = certifications.slice(0, 4);
+  const items = certifications.slice(0, 3);
+
   if (!items.length) {
     grid.innerHTML = '<article class="cert-card"><h3>No certifications yet</h3><p>Add certifications from admin.</p></article>';
     return;
   }
 
-  grid.innerHTML = items.map((item) => certificationTemplate(item)).join('');
+  grid.innerHTML = items.map((item, index) => certificationTemplate(item, index)).join('');
 }
 
-function bookCardTemplate(book = {}) {
+function bookCardTemplate(book = {}, index = 0) {
   const image = book.imageUrl || book.profileImageUrl || book.coverUrl || '';
   return `
-    <article class="cert-card book-card">
+    <article class="cert-card book-card motion-rise" style="--delay:${Math.min(index, 9) * 60}ms">
       ${image ? `<img class="card-image" src="${image}" alt="${book.title || 'Book'} image" loading="lazy">` : ''}
       <div class="cert-head">
         <h3>${book.title || 'Book'}</h3>
@@ -216,10 +238,47 @@ function renderBooks(books = [], categories = []) {
       <section class="book-category">
         <h3 class="book-category-title">${category}</h3>
         <div class="books-grid">
-          ${grouped[category].map((book) => bookCardTemplate(book)).join('')}
+          ${grouped[category].map((book, index) => bookCardTemplate(book, index)).join('')}
         </div>
       </section>
     `).join('');
+}
+
+function blogCardTemplate(blog = {}, index = 0) {
+  const image = blog.imageUrl || '';
+  const date = blog.date ? new Date(blog.date).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : 'Date not set';
+  const title = blog.title || 'Untitled Blog';
+  const excerpt = blog.excerpt || '';
+  const openTag = blog.url
+    ? `<a class="blog-card motion-rise" style="--delay:${Math.min(index, 7) * 70}ms" href="${blog.url}" target="_blank" rel="noreferrer">`
+    : `<article class="blog-card motion-rise" style="--delay:${Math.min(index, 7) * 70}ms">`;
+  const closeTag = blog.url ? '</a>' : '</article>';
+
+  return `
+    ${openTag}
+      <div class="blog-meta">
+        <h3 class="blog-title">${title}</h3>
+        <p class="blog-date">${date}</p>
+        ${excerpt ? `<p class="blog-excerpt">${excerpt}</p>` : ''}
+      </div>
+      <div class="blog-media">
+        ${image ? `<img class="blog-img" src="${image}" alt="${title} image" loading="lazy">` : '<div class="blog-img blog-img-empty">No Image</div>'}
+      </div>
+    ${closeTag}
+  `;
+}
+
+function renderFeaturedBlogs(blogs = []) {
+  const grid = document.getElementById('blogsGrid');
+  if (!grid) return;
+  const items = [...blogs]
+    .sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime())
+    .slice(0, 3);
+  if (!items.length) {
+    grid.innerHTML = '<article class="blog-card"><div class="blog-meta"><h3 class="blog-title">No blogs yet</h3><p class="blog-date">Add blog posts from your content source.</p></div></article>';
+    return;
+  }
+  grid.innerHTML = items.map((blog, index) => blogCardTemplate(blog, index)).join('');
 }
 
 function makeHeroLine(profile, technicalSkills) {
@@ -303,6 +362,7 @@ function setupReveal() {
     state.projects = Array.isArray(content.projects) ? content.projects : [];
     state.books = Array.isArray(content.books) ? content.books : [];
     state.certifications = Array.isArray(content.certifications) ? content.certifications : [];
+    state.blogs = Array.isArray(content.blogs) ? content.blogs : [];
 
     applyTheme(content.theme || {});
 
@@ -325,6 +385,7 @@ function setupReveal() {
     renderProjects(state.projects);
     renderCertifications(state.certifications);
     renderBooks(state.books, content.bookCategories || []);
+    renderFeaturedBlogs(state.blogs);
 
     setText('contactLine', `Open to ${profile.niche || 'security'} opportunities. Reach out at ${profile.email || 'email'}.`);
   } catch (error) {
@@ -337,6 +398,8 @@ function setupReveal() {
     renderProjects([]);
     renderCertifications([]);
     renderBooks([], []);
+    renderFeaturedBlogs([]);
   }
 })();
+
 

@@ -9,7 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Merienda:wght@400;600;700&family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/home.css">
 </head>
-<body>
+<body class="list-page">
   <header class="top-nav">
     <div class="container nav-inner">
       <a class="brand" href="/" aria-label="Home">
@@ -21,6 +21,7 @@
         <a class="nav-link" href="/projects">Projects</a>
         <a class="nav-link active" href="/certifications">Certifications</a>
         <a class="nav-link" href="/books">Books</a>
+        <a class="nav-link" href="/blog">Blog</a>
         <a class="nav-link" href="/contact">Contact</a>
       </nav>
     </div>
@@ -29,9 +30,10 @@
   <main class="container page-shell">
     <section class="section reveal in-view">
       <div class="section-header">
-        <h2>All Certifications</h2>
+        <h2 id="certPageTitle">Certifications</h2>
       </div>
-      <div id="certificationsGrid" class="certifications-grid"></div>
+      <p id="certBreadcrumb" class="cert-breadcrumb"></p>
+      <div id="certificationsApp"></div>
     </section>
   </main>
 

@@ -163,7 +163,8 @@ app.post('/api/admin/upload-image', requireAdminAuth, upload.single('file'), asy
       logo: 'portfolio/logo',
       project: 'portfolio/projects',
       certification: 'portfolio/certifications',
-      book: 'portfolio/books'
+      book: 'portfolio/books',
+      blog: 'portfolio/blogs'
     };
     const folder = folderMap[type] || folderMap.profile;
 
@@ -204,8 +205,20 @@ app.get('/certifications', (_req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'certifications.html'));
 });
 
+app.get('/certifications/:category', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'certifications.html'));
+});
+
+app.get('/certifications/:category/:slug', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'certifications.html'));
+});
+
 app.get('/books', (_req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'books.html'));
+});
+
+app.get('/blog', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'blog.html'));
 });
 
 app.get(/.*/, (_req, res) => {
