@@ -623,7 +623,7 @@ h2 {
 .admin-shell,
 #editorSection {
   display: grid;
-  grid-template-columns: 260px minmax(0, 1fr);
+  grid-template-columns: 300px minmax(0, 1fr);
   gap: 1.15rem;
   align-items: start;
 }
@@ -642,11 +642,18 @@ h2 {
 }
 
 .admin-head {
-  padding: 1.2rem 1.4rem;
+  padding: 1rem 1.25rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 0.8rem;
+  min-height: 112px;
+}
+
+.admin-head h1 {
+  font-size: clamp(1.75rem, 3.4vw, 2.85rem);
+  line-height: 1.06;
+  letter-spacing: 0.01em;
 }
 
 .admin-nav {
@@ -681,11 +688,11 @@ h2 {
   grid-column: 1;
   grid-row: 1;
   position: fixed;
-  top: 12px;
+  top: 128px;
   left: max(4vw, calc((100vw - 1140px) / 2));
-  width: 260px;
-  height: calc(100vh - 24px);
-  max-height: calc(100vh - 24px);
+  width: 300px;
+  height: calc(100vh - 140px);
+  max-height: calc(100vh - 140px);
   overflow: auto;
   padding-bottom: 0.5rem;
   display: flex;
