@@ -77,6 +77,8 @@
 
 let isEditorDirty = false;
 let isSaveInFlight = false;
+let autosaveTimer = null;
+const DRAFT_KEY = 'admin_draft_v1';
 
 function escapeHtml(value = '') {
   return String(value)
@@ -131,7 +133,135 @@ function markEditorDirty(value = true) {
   }
   isEditorDirty = value;
   setSaveButtonState();
+  // Schedule an autosave when dirty
+  if (value) scheduleAutosave();
 }
+
+// ═══ 2-CLICK DELETE CONFIRMATION ═══
+function confirmRemove(button, itemWrapper, itemName = 'this item') {
+  if (button.dataset.confirmState === 'armed') {
+    itemWrapper.remove();
+    showToast(`${itemName} removed.`, 'info');
+    markEditorDirty(true);
+    updateSidebarBadges();
+    renderEmptyStates();
+    return;
+  }
+  const originalText = button.textContent;
+  button.dataset.confirmState = 'armed';
+  button.textContent = `Sure? Click again`;
+  button.classList.add('confirm-armed');
+  const resetTimer = setTimeout(() => {
+    button.dataset.confirmState = '';
+    button.textContent = originalText;
+    button.classList.remove('confirm-armed');
+  }, 3000);
+  button.addEventListener('mouseleave', () => {
+    // If user moves away, reset faster
+  }, { once: true });
+}
+
+// ═══ AUTOSAVE DRAFT TO LOCALSTORAGE ═══
+function scheduleAutosave() {
+  if (autosaveTimer) clearTimeout(autosaveTimer);
+  autosaveTimer = setTimeout(() => {
+    saveDraft();
+  }, 30000); // Save after 30s of inactivity
+}
+
+function saveDraft() {
+  try {
+    if (!isEditorDirty) return;
+    const payload = buildPayload();
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({
+      timestamp: Date.now(),
+      data: payload
+    }));
+    setEditorStatus('Draft auto-saved locally.', 'info');
+  } catch {
+    // localStorage might be full — silently ignore
+  }
+}
+
+function restoreDraft() {
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) return null;
+    const draft = JSON.parse(raw);
+    const ageMs = Date.now() - (draft.timestamp || 0);
+    // Only offer drafts less than 24 hours old
+    if (ageMs > 86400000) {
+      clearDraft();
+      return null;
+    }
+    return draft;
+  } catch {
+    return null;
+  }
+}
+
+function clearDraft() {
+  try { localStorage.removeItem(DRAFT_KEY); } catch { }
+}
+
+// ═══ EMPTY STATE MESSAGES ═══
+function renderEmptyStates() {
+  const sections = [
+    { container: refs.projectsContainer, name: 'projects', label: 'No projects yet. Click "+ Add Project" to create one.' },
+    { container: refs.booksContainer, name: 'books', label: 'No books yet. Click "+ Add Book" to log one.' },
+    { container: refs.blogsContainer, name: 'blogs', label: 'No blogs yet. Click "+ Add Blog" to write one.' },
+    { container: refs.certificationsContainer, name: 'certs', label: 'No certifications yet. Click "+ Add Certification" to add one.' },
+    { container: refs.experienceContainer, name: 'exp', label: 'No experience entries yet. Click "+ Add Experience" to add one.' },
+    { container: refs.credibilityContainer, name: 'cred', label: 'No credibility metrics yet. Click "+ Add Metric" to create one.' },
+    { container: refs.socialsContainer, name: 'social', label: 'No social links yet. Click "+ Add Link" to add one.' },
+  ];
+
+  sections.forEach(({ container, name, label }) => {
+    if (!container) return;
+    let emptyEl = container.querySelector('.empty-state');
+    const hasItems = container.querySelector('.project-editor, .managed-item, .item-row');
+    if (!hasItems) {
+      if (!emptyEl) {
+        emptyEl = document.createElement('div');
+        emptyEl.className = 'empty-state';
+        emptyEl.innerHTML = `<p>${label}</p>`;
+        container.appendChild(emptyEl);
+      }
+    } else if (emptyEl) {
+      emptyEl.remove();
+    }
+  });
+}
+
+// ═══ SIDEBAR COUNT BADGES ═══
+function updateSidebarBadges() {
+  const counts = {
+    'admin-projects': refs.projectsContainer?.querySelectorAll('.managed-item').length || 0,
+    'admin-books': refs.booksContainer?.querySelectorAll('.managed-item').length || 0,
+    'admin-blogs': refs.blogsContainer?.querySelectorAll('.managed-item').length || 0,
+    'admin-certifications': refs.certificationsContainer?.querySelectorAll('.managed-item').length || 0,
+    'admin-experience': refs.experienceContainer?.querySelectorAll('.project-editor').length || 0,
+    'admin-credibility': refs.credibilityContainer?.querySelectorAll('.project-editor').length || 0,
+    'admin-socials': refs.socialsContainer?.querySelectorAll('.project-editor').length || 0,
+    'admin-skills-tech': refs.technicalSkillsContainer?.querySelectorAll('.item-row').length || 0,
+    'admin-skills-soft': refs.softSkillsContainer?.querySelectorAll('.item-row').length || 0,
+  };
+
+  document.querySelectorAll('.cluster-link').forEach((link) => {
+    const target = link.dataset.target;
+    const count = counts[target];
+    let badge = link.querySelector('.badge-count');
+    if (count !== undefined) {
+      if (!badge) {
+        badge = document.createElement('span');
+        badge.className = 'badge-count';
+        link.appendChild(badge);
+      }
+      badge.textContent = count;
+    }
+  });
+}
+
 
 async function requestJson(url, options = {}) {
   const headers = { ...(options.headers || {}) };
@@ -407,6 +537,11 @@ function setupClusterNavigation() {
   const activate = (id) => {
     allPanels.forEach((panel) => panel.classList.toggle('hidden', panel.id !== id));
     links.forEach((link) => link.classList.toggle('active', link.dataset.target === id));
+    // Smooth scroll the active panel into view
+    const activePanel = panelById.get(id);
+    if (activePanel) {
+      setTimeout(() => activePanel.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+    }
   };
 
   links.forEach((link) => {
@@ -797,7 +932,7 @@ function rowInput(value = '', placeholder = 'Value') {
   remove.className = 'btn ghost';
   remove.type = 'button';
   remove.textContent = 'Remove';
-  remove.addEventListener('click', () => row.remove());
+  remove.addEventListener('click', () => confirmRemove(remove, row, 'Skill'));
 
   row.append(input, remove);
   return row;
@@ -817,7 +952,7 @@ function credibilityRow(item = {}) {
   remove.className = 'btn ghost';
   remove.type = 'button';
   remove.textContent = 'Remove Metric';
-  remove.addEventListener('click', () => row.remove());
+  remove.addEventListener('click', () => confirmRemove(remove, row, 'Metric'));
   row.appendChild(remove);
   return row;
 }
@@ -836,7 +971,7 @@ function socialRow(social = {}) {
   remove.className = 'btn ghost';
   remove.type = 'button';
   remove.textContent = 'Remove Link';
-  remove.addEventListener('click', () => row.remove());
+  remove.addEventListener('click', () => confirmRemove(remove, row, 'Social link'));
 
   row.appendChild(remove);
   return row;
@@ -858,7 +993,7 @@ function experienceCard(experience = {}) {
   remove.className = 'btn ghost';
   remove.type = 'button';
   remove.textContent = 'Remove Experience';
-  remove.addEventListener('click', () => wrapper.remove());
+  remove.addEventListener('click', () => confirmRemove(remove, wrapper, 'Experience'));
 
   wrapper.appendChild(remove);
   return wrapper;
@@ -920,7 +1055,7 @@ function certificationCard(certification = {}) {
   remove.className = 'btn ghost';
   remove.type = 'button';
   remove.textContent = 'Remove Certification';
-  remove.addEventListener('click', () => wrapper.remove());
+  remove.addEventListener('click', () => confirmRemove(remove, wrapper, 'Certification'));
 
   body.appendChild(remove);
   const titleInput = body.querySelector('.c-title');
@@ -999,7 +1134,7 @@ function projectCard(project = {}) {
   remove.className = 'btn ghost';
   remove.type = 'button';
   remove.textContent = 'Remove Project';
-  remove.addEventListener('click', () => wrapper.remove());
+  remove.addEventListener('click', () => confirmRemove(remove, wrapper, 'Project'));
 
   body.appendChild(remove);
   const titleInput = body.querySelector('.p-title');
@@ -1046,7 +1181,7 @@ function bookCard(book = {}) {
   remove.className = 'btn ghost';
   remove.type = 'button';
   remove.textContent = 'Remove Book';
-  remove.addEventListener('click', () => wrapper.remove());
+  remove.addEventListener('click', () => confirmRemove(remove, wrapper, 'Book'));
 
   body.addEventListener('click', async (event) => {
     const target = event.target;
@@ -1136,7 +1271,7 @@ function blogCard(blog = {}) {
   remove.className = 'btn ghost';
   remove.type = 'button';
   remove.textContent = 'Remove Blog';
-  remove.addEventListener('click', () => wrapper.remove());
+  remove.addEventListener('click', () => confirmRemove(remove, wrapper, 'Blog'));
   body.appendChild(remove);
 
   const titleInput = body.querySelector('.blog-title');
@@ -1690,10 +1825,29 @@ setupManagedReorder(refs.booksContainer);
 setupManagedReorder(refs.blogsContainer);
 setupManagedReorder(refs.projectsContainer);
 const activateEditorPanel = setupClusterNavigation();
+
+// Dashboard quick-add: navigate + auto-create a new item
+const quickAddMap = {
+  'admin-projects': () => { const item = projectCard({}); item.open = true; refs.projectsContainer.appendChild(item); return item; },
+  'admin-books': () => { const item = bookCard({}); item.open = true; refs.booksContainer.appendChild(item); return item; },
+  'admin-certifications': () => { const item = certificationCard({}); item.open = true; refs.certificationsContainer.appendChild(item); return item; },
+  'admin-blogs': () => { const item = blogCard({}); item.open = true; refs.blogsContainer.appendChild(item); return item; },
+};
+
 document.querySelectorAll('.dashboard-link').forEach((button) => {
   button.addEventListener('click', () => {
+    const target = button.dataset.target;
     if (typeof activateEditorPanel === 'function') {
-      activateEditorPanel(button.dataset.target);
+      activateEditorPanel(target);
+    }
+    // Auto-add a new item and scroll to it
+    const addFn = quickAddMap[target];
+    if (addFn) {
+      const newItem = addFn();
+      showToast(`New item added!`, 'success');
+      updateSidebarBadges();
+      renderEmptyStates();
+      setTimeout(() => newItem?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 200);
     }
   });
 });
